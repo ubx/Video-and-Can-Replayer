@@ -1,2 +1,2 @@
 # Video-and-Can-Replayer
-Replay a video with a can bus logfile in sync.
+Replay a video in sync with a can bus logfile.

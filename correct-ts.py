@@ -3,17 +3,12 @@ import datetime
 import os
 from statistics import mean, variance, stdev
 
-'''
-   Adjust time stamps according to to GPS time (UTC):
-      sudo ip link add dev vcan0 type vcan
-      sudo ip link set up vcan0
-'''
-
 ## todo -- user rather Log Reader then these rather complicated parsing code !!!
 
 parser = argparse.ArgumentParser(
-    description='Correct time stamps according to the logger time synch (canId 0x1FFFFFF0) and optional GPS time (UTC).'
-                'Only useful for CANaerospace format!')
+    description='''Split a can-bus logfile into multiple files. Condition: timestap (can id=0x1FFFFFF0) > 1.0 seconds.
+                Correct time stamps according to the logger time synch (canId 0x1FFFFFF0) and optional correct with GPS time (UTC).
+                Only useful for CANaerospace format!''')
 parser.add_argument('-input', metavar='input', type=str, help='Input logfile.')
 parser.add_argument('-gps', action='store_true', help='Sync with GPS time (canIDs 1200 and 1206.')
 

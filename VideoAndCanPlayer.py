@@ -57,23 +57,14 @@ def frame_extradiff(cur_frame, fps, init=False):
         frameC0 = cur_frame
         return 0.0
     diff = (time.time() - frameT0) - ((cur_frame - frameC0) / fps)
-    print('diff0:', diff)
     if diff > 1.0 or diff < -1.0:
         diff = 0.0
-    print('diff:', diff)
+    print('F_diff:', diff)
     return diff
 
 
 messageT0 = None
-messagetsT0 = None
-
-
-def message_extradiff(timestamp, init=False): ## todo -- implement
-    global messageT0, messagetsT0
-    if init or messageT0 is None:
-        messageT0 = time.time()
-        messagetsT0 = timestamp
-    pass
+messageTsT0 = None
 
 
 def main():
@@ -196,6 +187,7 @@ def main():
                 if canthread is not None:
                     canthread.stop()
                     canthread = None
+                    messageT0 = None
             else:
                 pause_button.Update(text='||')
                 canthread = CanSender(canlogfilename, frame2time(cur_frame, syncpoints, fps),
@@ -248,13 +240,13 @@ def main():
             trigger_pause = False
             pause_button.Update(text='>')
 
-        delay = int(((1.0 / fps) * 1000)) - int(((time.time() - t1) * 1000))
-        cv.waitKey(max(delay - int(frame_extradiff(cur_frame, fps, pause) * 1000), 1))
+        delay = int(1000 / fps) - int((time.time() - t1) * 1000)
+        wait = max(delay - int(frame_extradiff(cur_frame, fps, pause) * 1000), 1)
+        cv.waitKey(wait)
 
         if canthread is not None:
             message = canthread.getMessage()
             if message is not None:
-                message_extradiff(message.timestamp)
                 print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(message.timestamp)))
 
     config['video']['bookmarks'] = bookmarks

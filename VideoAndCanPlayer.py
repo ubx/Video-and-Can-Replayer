@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+
 import helptext
 import json
 import sys
@@ -32,6 +33,47 @@ def frame2time(cur_frame, syncpoints, fps):
     fsp = next(iter(syncpoints))  ## first syncpoint !
     t1 = syncpoints[fsp]
     return t1 - ((int(fsp) - cur_frame) / fps)
+
+
+def calcfps(syncpoints):
+    fpss = []
+    sp0 = None
+    if len(syncpoints) > 1:
+        for sp in syncpoints:
+            if sp0 is not None:
+                fpss.append((int(sp) - int(sp0)) / (syncpoints[sp] - syncpoints[sp0]))
+            sp0 = sp
+    return fpss
+
+
+frameT0 = None
+frameC0 = 0
+
+
+def frame_extradiff(cur_frame, fps, init=False):
+    global frameT0, frameC0
+    if init or frameT0 is None:
+        frameT0 = time.time()
+        frameC0 = cur_frame
+        return 0.0
+    diff = (time.time() - frameT0) - ((cur_frame - frameC0) / fps)
+    print('diff0:', diff)
+    if diff > 1.0 or diff < -1.0:
+        diff = 0.0
+    print('diff:', diff)
+    return diff
+
+
+messageT0 = None
+messagetsT0 = None
+
+
+def message_extradiff(timestamp, init=False): ## todo -- implement
+    global messageT0, messagetsT0
+    if init or messageT0 is None:
+        messageT0 = time.time()
+        messagetsT0 = timestamp
+    pass
 
 
 def main():
@@ -110,11 +152,15 @@ def main():
     if len(syncpoints) == 0:
         print("No synpoints for video, exit")
     aspectratio = config['video']['aspectratio']
+    ## fps andr fps calculated!
+    fpss = calcfps(syncpoints)
+    print(fps, fpss)
+    if len(fpss) > 0:
+        fps = fpss[0]
 
     ### sp = f'{25075}'  ## no int key in json !!!
 
     canthread = None
-
     while videoFile.isOpened():
         t1 = time.time()
         event, values = window.read(timeout=0)
@@ -202,15 +248,14 @@ def main():
             trigger_pause = False
             pause_button.Update(text='>')
 
-        t2 = time.time()
-        delay = int(((1.0 / fps) * 1000)) - int(((t2 - t1) * 1000))
-        ##print(delay)
-        cv.waitKey(max(delay, 1))
+        delay = int(((1.0 / fps) * 1000)) - int(((time.time() - t1) * 1000))
+        cv.waitKey(max(delay - int(frame_extradiff(cur_frame, fps, pause) * 1000), 1))
+
         if canthread is not None:
             message = canthread.getMessage()
             if message is not None:
-                print(
-                    time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(message.timestamp)))
+                message_extradiff(message.timestamp)
+                print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(message.timestamp)))
 
     config['video']['bookmarks'] = bookmarks
     config['video']['syncpoints'] = syncpoints

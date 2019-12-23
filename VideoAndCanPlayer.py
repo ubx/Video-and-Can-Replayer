@@ -240,6 +240,7 @@ def main():
             trigger_pause = False
             pause_button.Update(text='>')
 
+        ## todo -- simplify the 2 lines below!!
         delay = int(1000 / fps) - int((time.time() - t1) * 1000)
         wait = max(delay - int(frame_extradiff(cur_frame, fps, pause) * 1000), 1)
         cv.waitKey(wait)

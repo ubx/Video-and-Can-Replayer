@@ -63,10 +63,6 @@ def frame_extradiff(cur_frame, fps, init=False):
     return diff
 
 
-messageT0 = None
-messageTsT0 = None
-
-
 def main():
     parser = argparse.ArgumentParser(
         "python VideoAndCanPlayer",

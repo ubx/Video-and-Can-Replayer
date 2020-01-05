@@ -59,7 +59,7 @@ def frame_extradiff(cur_frame, fps, init=False):
     diff = (time.time() - frameT0) - ((cur_frame - frameC0) / fps)
     if diff > 1.0 or diff < -1.0:
         diff = 0.0
-    print('F_diff:', diff)
+    ##print('F_diff:', diff)
     return diff
 
 
@@ -147,14 +147,17 @@ def main():
 
     ### sp = f'{25075}'  ## no int key in json !!!
 
-    canthread = None
+    cansender = CanSender(canlogfilename, frame2time(cur_frame, syncpoints, fps),
+                          config['canbus']['channel'],
+                          config['canbus']['interface'])
+    cansender.start()
     while videoFile.isOpened():
-        t1 = time.time()
+        T0 = time.time()
         event, values = window.read(timeout=0)
         ##print(event, values)
         if event in ('Exit', None):
-            if canthread is not None:
-                canthread.stop()
+            if cansender:
+                cansender.stop()
             break
 
         if event == 'Bookmark':
@@ -163,7 +166,7 @@ def main():
             bookmarks.sort()
 
         elif event == 'Prev':
-            prev, _ = inbetween(bookmarks, cur_frame)
+            prev, _ = inbetween(bookmarks, cur_frame - 1)
             if prev is not None:
                 videoFile.set(cv.CAP_PROP_POS_FRAMES, prev)
                 values['-slider-'] = prev
@@ -178,18 +181,18 @@ def main():
 
         elif event == 'Pause':
             pause = not pause
+            ###  window['-RUN-PAUSE-'].update('Run' if paused else 'Pause')
+
             if pause:
                 pause_button.Update(text='>')
-                if canthread is not None:
-                    canthread.stop()
-                    canthread = None
-                    messageT0 = None
+                cansender.stop()
+                messageT0 = None
             else:
                 pause_button.Update(text='||')
-                canthread = CanSender(canlogfilename, frame2time(cur_frame, syncpoints, fps),
+                cansender = CanSender(canlogfilename, frame2time(cur_frame, syncpoints, fps),
                                       config['canbus']['channel'],
                                       config['canbus']['interface'])
-                canthread.start()
+                cansender.start()
 
         elif event == 'Sync':
             input_text = sg.InputText(key='-IN-')
@@ -235,16 +238,12 @@ def main():
             pause = True
             trigger_pause = False
             pause_button.Update(text='>')
+            cansender.stop()
 
         ## todo -- simplify the 2 lines below!!
-        delay = int(1000 / fps) - int((time.time() - t1) * 1000)
+        delay = int(1000 / fps) - int((time.time() - T0) * 1000)
         wait = max(delay - int(frame_extradiff(cur_frame, fps, pause) * 1000), 1)
         cv.waitKey(wait)
-
-        if canthread is not None:
-            message = canthread.getMessage()
-            if message is not None:
-                print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(message.timestamp)))
 
     config['video']['bookmarks'] = bookmarks
     config['video']['syncpoints'] = syncpoints

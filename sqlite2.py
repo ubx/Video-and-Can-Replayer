@@ -29,3 +29,8 @@ class SqliteReader2(SqliteReader):
         for frame_data in self._cursor.execute(
                 "SELECT * FROM {} where ts >= {:f}".format(self.table_name, self.start_time)):
             yield SqliteReader2._assemble_message(frame_data)
+
+    def __len__(self):
+        # this might not run in constant time
+        result = self._cursor.execute("SELECT COUNT(*) FROM {} where ts >= {:f}".format(self.table_name, self.start_time))
+        return int(result.fetchone()[0])

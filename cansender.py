@@ -10,27 +10,22 @@ class CanSender(threading.Thread):
     def __init__(self, infile, start_time, channel, interface, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._stop = threading.Event()
-        self.infile = infile
-        self.start_time = start_time
-        self.reader = None
-        self.running = False
+        self.reader = LogReader2(infile, start_time)
         self.config = {'single_handle': True}
         self.config['interface'] = interface
         self.bus = Bus(channel, **self.config)
-        self.message = None
+        self.running = False
 
-# function using _stop function
+    # function using _stop function
     def stop(self):
         self.running = False
-        self.reader.stop()
-        self.bus.shutdown()
         self._stop.set()
+        self.reader.__exit__()
 
     def stopped(self):
         return self._stop.isSet()
 
     def run(self):
-        self.reader = LogReader2(self.infile, self.start_time)
         in_sync = MessageSync(self.reader, timestamps=True)
         print('Can LogReader (Started on {})'.format(datetime.now()))
         self.running = True
@@ -41,12 +36,9 @@ class CanSender(threading.Thread):
                 if message.is_error_frame:
                     continue
                 self.bus.send(message)
-                self.message = message
         except KeyboardInterrupt:
             pass
         finally:
-            self.bus.shutdown()
             self.reader.stop()
-
-    def getMessage(self):
-        return self.message
+            self.reader.__exit__()
+            self.stop()

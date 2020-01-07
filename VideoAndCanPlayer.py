@@ -112,10 +112,10 @@ def main():
 
     # ---===--- define the window layout --- #
     slider = sg.Slider(range=(0, num_frames), size=(60, 10), orientation='h', key='-slider-')
-    graph = sg.Graph(canvas_size=(650, 10), graph_bottom_left=(0, 0), graph_top_right=(num_frames, 10),
+    graph = sg.Graph(canvas_size=(658, 10), graph_bottom_left=(0, 0), graph_top_right=(num_frames, 10),
                      background_color='white', key='-graph')
     pause_button: Button = sg.Button('||', key='Pause', size=(5, 1), font='Helvetica 14')
-    layout = [[sg.Text('Video and Can reply', size=(15, 1), font='Helvetica 20')],
+    layout = [[sg.Text('Video and Can Replayer', size=(30, 1), font='Helvetica 20')],
               [slider],
               [graph],
               [sg.Button('Bookmark', size=(7, 1), font='Helvetica 14'),

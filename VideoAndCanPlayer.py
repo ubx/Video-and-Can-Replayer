@@ -147,17 +147,15 @@ def main():
 
     ### sp = f'{25075}'  ## no int key in json !!!
 
-    cansender = CanSender(canlogfilename, frame2time(cur_frame, syncpoints, fps),
-                          config['canbus']['channel'],
-                          config['canbus']['interface'])
+    cansender = CanSender(canlogfilename, config['canbus']['channel'], config['canbus']['interface'])
     cansender.start()
+    cansender.resume(frame2time(cur_frame, syncpoints, fps))
     while videoFile.isOpened():
         T0 = time.time()
         event, values = window.read(timeout=0)
         ##print(event, values)
         if event in ('Exit', None):
-            if cansender:
-                cansender.stop()
+            cansender.join()
             break
 
         if event == 'Bookmark':
@@ -189,10 +187,7 @@ def main():
                 messageT0 = None
             else:
                 pause_button.Update(text='||')
-                cansender = CanSender(canlogfilename, frame2time(cur_frame, syncpoints, fps),
-                                      config['canbus']['channel'],
-                                      config['canbus']['interface'])
-                cansender.start()
+                cansender.resume(frame2time(cur_frame, syncpoints, fps))
 
         elif event == 'Sync':
             input_text = sg.InputText(key='-IN-')

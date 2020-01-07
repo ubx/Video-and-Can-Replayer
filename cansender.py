@@ -1,44 +1,85 @@
 import threading
-from datetime import datetime
+from time import sleep
 
-from can import MessageSync, Bus
+from can import Bus, MessageSync
 
 from player2 import LogReader2
 
 
 class CanSender(threading.Thread):
-    def __init__(self, infile, start_time, channel, interface, *args, **kwargs):
+    def __init__(self, infile, channel, interface, *args, start_time=0.0, **kwargs):
         super().__init__(*args, **kwargs)
-        self._stop = threading.Event()
-        self.reader = LogReader2(infile, start_time)
+        self.infile = infile
+        self.start_time = start_time
         self.config = {'single_handle': True}
         self.config['interface'] = interface
         self.bus = Bus(channel, **self.config)
-        self.running = False
 
-    # function using _stop function
-    def stop(self):
-        self.running = False
-        self._stop.set()
-        self.reader.__exit__()
+        self.runevent = threading.Event()
+        self.runevent.clear()
 
-    def stopped(self):
-        return self._stop.isSet()
+        self.killevent = threading.Event()
+        self.killevent.set()
 
     def run(self):
-        in_sync = MessageSync(self.reader, timestamps=True)
-        print('Can LogReader (Started on {})'.format(datetime.now()))
-        self.running = True
-        try:
-            for message in in_sync:
-                if not self.running:
-                    break
-                if message.is_error_frame:
-                    continue
-                self.bus.send(message)
-        except KeyboardInterrupt:
-            pass
-        finally:
+        while True:
+            self.killevent.wait()
+            self.runevent.wait()
+            self.reader = LogReader2(self.infile, self.start_time)
+            self.in_sync = MessageSync(self.reader, timestamps=True)
+            try:
+                for message in self.in_sync:
+                    self.bus.send(message)
+                    if not self.runevent.isSet():
+                        break
+            finally:
+                pass
+
             self.reader.stop()
             self.reader.__exit__()
-            self.stop()
+            self.runevent.clear()
+
+    def resume(self, start_time):
+        self.start_time = start_time
+        self.runevent.set()
+
+    def stop(self):
+        self.runevent.clear()
+
+    def join(self):
+        self.runevent.clear()
+        sleep(1)
+        self.killevent.clear()
+        threading.Thread.join(self, 1)
+
+
+if __name__ == '__main__':
+    print('INIT')
+    cansender = CanSender('data/candump-2019-09-21_110938-gps.db', 1569062280.0, 'vcan0', 'socketcan')
+    cansender.start()
+    sleep(5)
+
+    print('RESUME')
+    cansender.resume(start_time=1569074766.0)
+    sleep(10)
+
+    print('STOP')
+    cansender.stop()
+    sleep(5)
+
+    print('RESUME1')
+    cansender.resume(start_time=1569048715.0)
+    sleep(5)
+
+    print('STOP1')
+    cansender.stop()
+    sleep(5)
+
+    print('RESUME2')
+    cansender.resume(start_time=1569062280.0)
+    sleep(5)
+
+    print('JOIN')
+    cansender.join()
+
+    print('xxxxxxxxxxxxxxxxxxxx')

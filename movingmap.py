@@ -17,10 +17,8 @@ class SvgWidget(Scatter):
             svg = Svg(filename)
         self.size = svg.width, svg.height
 
+
 class MapViewApp(App):
-    mapview = None
-    marker = None
-    symbol = None
 
     def __init__(self, pos, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -30,8 +28,10 @@ class MapViewApp(App):
         self.lat = 47.0
         self.lon = 7.0
         self.mapview = MapView(zoom=8, lat=self.lat, lon=self.lon)
+        self.symbol = SvgWidget('mapview/icons/glider_symbol.svg')
+        self.mapview.add_widget(self.symbol)
         from kivy.clock import Clock
-        Clock.schedule_interval(self.clock_callback, 0.5)
+        Clock.schedule_interval(self.clock_callback, 0.25)
         return self.mapview
 
     def clock_callback(self, dt):
@@ -40,17 +40,10 @@ class MapViewApp(App):
             self.lat = lat2
             self.lon = lon2
         self.mapview.center_on(self.lat, self.lon)
-
-        if not self.symbol:
-            self.symbol = SvgWidget('mapview/icons/glider_symbol.svg')
-            self.mapview.add_widget(self.symbol)
         self.symbol.center = Window.center
         th = self.pos.getTh()
         if th:
             self.symbol._set_rotation(th * -1.0)
-        else:
-            th = 0.0
-        ##print('App', self.lat, self.lon, '{:01}'.format(int(round(th, 0))))
 
 
 if __name__ == '__main__':

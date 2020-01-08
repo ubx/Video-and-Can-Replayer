@@ -1,5 +1,4 @@
 import sys
-from kivy.clock import Clock
 
 from kivy.app import App
 from kivy.graphics.svg import Svg
@@ -31,6 +30,7 @@ class MapViewApp(App):
         self.lat = 47.0
         self.lon = 7.0
         self.mapview = MapView(zoom=8, lat=self.lat, lon=self.lon)
+        from kivy.clock import Clock
         Clock.schedule_interval(self.clock_callback, 0.5)
         return self.mapview
 
@@ -42,7 +42,7 @@ class MapViewApp(App):
         self.mapview.center_on(self.lat, self.lon)
 
         if not self.symbol:
-            self.symbol = SvgWidget('../mapview/icons/glider_symbol.svg')
+            self.symbol = SvgWidget('mapview/icons/glider_symbol.svg')
             self.mapview.add_widget(self.symbol)
         self.symbol.center = Window.center
         th = self.pos.getTh()
@@ -54,8 +54,9 @@ class MapViewApp(App):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) == 2 and sys.argv[1] == 'log':
-        pos = CanlogPos('../data/candump-2019-09-21_110938-gps.db', 1569062280.0)
+    ## todo -- use argparse
+    if len(sys.argv) == 3 and sys.argv[1] == 'file':
+        pos = CanlogPos(sys.argv[2])
     else:
         pos = CanbusPos(channel='vcan0', bustype='socketcan')
     pos.start()

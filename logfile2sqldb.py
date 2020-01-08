@@ -49,7 +49,7 @@ def main():
     can.set_logging_level(logging_level_name)
 
     reader = LogReader(results.infile)
-    in_nosync = MessageSync(reader, timestamps=False, skip=3600)
+    in_nosync = MessageSync(reader, timestamps=False)
     print('Can LogReader (Started on {})'.format(datetime.now()))
 
     conn = sqlite3.connect(results.outfile)

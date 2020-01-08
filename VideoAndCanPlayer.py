@@ -32,7 +32,7 @@ def inbetween(list, val):
 def frame2time(cur_frame, syncpoints, fps):
     fsp = next(iter(syncpoints))  ## first syncpoint !
     t1 = syncpoints[fsp]
-    return t1 - ((int(fsp) - cur_frame) / fps)
+    return (t1 - ((int(fsp) - cur_frame) / fps)) - 7200.0  ## todo -- correct, where ?
 
 
 def calcfps(syncpoints):

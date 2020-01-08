@@ -14,6 +14,8 @@ from PySimpleGUI import Button
 ##Audio: from ffpyplayer.player import MediaPlayer
 from cansender import CanSender
 
+TIME_OFFSET = 7200.0
+
 
 def inbetween(list, val):
     prev, next = None, None
@@ -32,7 +34,7 @@ def inbetween(list, val):
 def frame2time(cur_frame, syncpoints, fps):
     fsp = next(iter(syncpoints))  ## first syncpoint !
     t1 = syncpoints[fsp]
-    return (t1 - ((int(fsp) - cur_frame) / fps)) - 7200.0  ## todo -- correct, where ?
+    return (t1 - ((int(fsp) - cur_frame) / fps)) - TIME_OFFSET ## todo -- correct, where ?
 
 
 def calcfps(syncpoints):
@@ -155,7 +157,7 @@ def main():
         event, values = window.read(timeout=0)
         ##print(event, values)
         if event in ('Exit', None):
-            cansender.join()
+            ##cansender.join() ## todo -- hangs!
             break
 
         if event == 'Bookmark':
@@ -244,6 +246,7 @@ def main():
     config['video']['syncpoints'] = syncpoints
     with open(results.config, 'w') as outfile:
         json.dump(config, outfile, indent=3, sort_keys=True)
+    sys.exit(0)
 
 
 main()

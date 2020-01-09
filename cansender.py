@@ -6,6 +6,7 @@ from can import Bus, MessageSync
 from player2 import LogReader2
 
 
+
 class CanSender(threading.Thread):
     def __init__(self, infile, channel, interface, *args, start_time=0.0, **kwargs):
         super().__init__(*args, **kwargs)
@@ -38,6 +39,8 @@ class CanSender(threading.Thread):
             self.reader.stop()
             self.reader.__exit__()
             self.runevent.clear()
+            if self.killevent.isSet():
+                break
 
     def resume(self, start_time):
         self.start_time = start_time
@@ -46,11 +49,11 @@ class CanSender(threading.Thread):
     def stop(self):
         self.runevent.clear()
 
-    def join(self):
+    def exit(self):
         self.runevent.clear()
-        sleep(1)
-        self.killevent.clear()
-        threading.Thread.join(self, 1)
+        self.reader.stop()
+        self.killevent.set()
+        threading.Thread.join(self)
 
 
 if __name__ == '__main__':

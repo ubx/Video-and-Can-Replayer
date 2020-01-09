@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 import argparse
+import os
+import threading
 
 import helptext
 import json
@@ -13,6 +15,7 @@ from PySimpleGUI import Button
 
 ##Audio: from ffpyplayer.player import MediaPlayer
 from cansender import CanSender
+
 
 def inbetween(list, val):
     prev, next = None, None
@@ -125,7 +128,6 @@ def main():
 
     pause = False
     trigger_pause = False
-    cur_frame: int = 0
     bookmarks = config['video']['bookmarks']
     bookmarks.sort()
     for fr in bookmarks:
@@ -145,102 +147,105 @@ def main():
 
     cansender = CanSender(canlogfilename, config['canbus']['channel'], config['canbus']['interface'])
     cansender.start()
-    cansender.resume(frame2time(cur_frame, syncpoints, fps))
-    while videoFile.isOpened():
-        T0 = time.time()
-        event, values = window.read(timeout=0)
-        ##print(event, values)
-        if event in ('Exit', None):
-            ##cansender.join() ## todo -- hangs!
-            break
+    running = True
+    while running:
+        cur_frame: int = 0
+        cansender.resume(frame2time(cur_frame, syncpoints, fps))
+        while videoFile.isOpened():
+            T0 = time.time()
+            event, values = window.read(timeout=0)
+            ##print(event, values)
+            if event in ('Exit', None):
+                running = False
+                break
 
-        if event == 'Bookmark':
-            graph.DrawLine((cur_frame, 0), (cur_frame, 10), width=3, color='green')
-            bookmarks.append(cur_frame)
-            bookmarks.sort()
+            if event == 'Bookmark':
+                graph.DrawLine((cur_frame, 0), (cur_frame, 10), width=3, color='green')
+                bookmarks.append(cur_frame)
+                bookmarks.sort()
 
-        elif event == 'Prev':
-            prev, _ = inbetween(bookmarks, cur_frame - 1)
-            if prev is not None:
-                videoFile.set(cv.CAP_PROP_POS_FRAMES, prev)
-                values['-slider-'] = prev
-                trigger_pause = True
+            elif event == 'Prev':
+                prev, _ = inbetween(bookmarks, cur_frame - 1)
+                if prev is not None:
+                    videoFile.set(cv.CAP_PROP_POS_FRAMES, prev)
+                    values['-slider-'] = prev
+                    trigger_pause = True
 
-        elif event == 'Next':
-            _, next = inbetween(bookmarks, cur_frame)
-            if next is not None:
-                videoFile.set(cv.CAP_PROP_POS_FRAMES, next)
-                values['-slider-'] = next
-                trigger_pause = True
+            elif event == 'Next':
+                _, next = inbetween(bookmarks, cur_frame)
+                if next is not None:
+                    videoFile.set(cv.CAP_PROP_POS_FRAMES, next)
+                    values['-slider-'] = next
+                    trigger_pause = True
 
-        elif event == 'Pause':
-            pause = not pause
-            ###  window['-RUN-PAUSE-'].update('Run' if paused else 'Pause')
+            elif event == 'Pause':
+                pause = not pause
+                ###  window['-RUN-PAUSE-'].update('Run' if paused else 'Pause')
 
-            if pause:
+                if pause:
+                    pause_button.Update(text='>')
+                    cansender.stop()
+                    messageT0 = None
+                else:
+                    pause_button.Update(text='||')
+                    cansender.resume(frame2time(cur_frame, syncpoints, fps))
+
+            elif event == 'Sync':
+                input_text = sg.InputText(key='-IN-')
+                layout2 = [[sg.Text('UTC time (ex. 2019-12-11 11:22:33)')], [input_text],
+                           [sg.Ok(), sg.Cancel()]]
+                window2 = sg.Window('Time synchronize window.', layout2)
+                while True:
+                    event2, values2 = window2.read()
+                    if event2 == 'Ok':
+                        try:
+                            sp = values2['-IN-']
+                            epoch_time: float = (
+                                    datetime.strptime(sp, '%Y-%m-%d %H:%M:%S') - datetime(1970, 1, 1)).total_seconds()
+                            syncpoints[cur_frame] = epoch_time
+                            break
+                        except:
+                            sg.Popup('Error, can not convert to timestamp:', values2['-IN-'])
+                            input_text.update('')
+                    else:
+                        break
+                window2.close()
+
+            ret, frame = videoFile.read()
+            ##Audio: audio_frame, val = player.get_frame()
+            if not ret:  # if out of data stop looping
+                break
+            # if someone moved the slider manually, the jump to that frame
+            if int(values['-slider-']) != cur_frame - 1:
+                cur_frame = int(values['-slider-'])
+                videoFile.set(cv.CAP_PROP_POS_FRAMES, cur_frame)
+                ##Audio: player.seek(cur_frame/fps,relative=False)
+            slider.update(cur_frame)
+
+            if not pause:
+                cur_frame += 1
+                height, width, layers = frame.shape
+                new_h = int(height / aspectratio)
+                new_w = int(width / aspectratio)
+                frame = cv.resize(frame, (new_w, new_h))
+                cv.imshow('frame', frame)
+
+            if trigger_pause:
+                pause = True
+                trigger_pause = False
                 pause_button.Update(text='>')
                 cansender.stop()
-                messageT0 = None
-            else:
-                pause_button.Update(text='||')
-                cansender.resume(frame2time(cur_frame, syncpoints, fps))
 
-        elif event == 'Sync':
-            input_text = sg.InputText(key='-IN-')
-            layout2 = [[sg.Text('UTC time (ex. 2019-12-11 11:22:33)')], [input_text],
-                       [sg.Ok(), sg.Cancel()]]
-            window2 = sg.Window('Time synchronize window.', layout2)
-            while True:
-                event2, values2 = window2.read()
-                if event2 == 'Ok':
-                    try:
-                        sp = values2['-IN-']
-                        epoch_time: float = (
-                                datetime.strptime(sp, '%Y-%m-%d %H:%M:%S') - datetime(1970, 1, 1)).total_seconds()
-                        syncpoints[cur_frame] = epoch_time
-                        break
-                    except:
-                        sg.Popup('Error, can not convert to timestamp:', values2['-IN-'])
-                        input_text.update('')
-                else:
-                    break
-            window2.close()
-
-        ret, frame = videoFile.read()
-        ##Audio: audio_frame, val = player.get_frame()
-        if not ret:  # if out of data stop looping
-            break
-        # if someone moved the slider manually, the jump to that frame
-        if int(values['-slider-']) != cur_frame - 1:
-            cur_frame = int(values['-slider-'])
-            videoFile.set(cv.CAP_PROP_POS_FRAMES, cur_frame)
-            ##Audio: player.seek(cur_frame/fps,relative=False)
-        slider.update(cur_frame)
-
-        if not pause:
-            cur_frame += 1
-            height, width, layers = frame.shape
-            new_h = int(height / aspectratio)
-            new_w = int(width / aspectratio)
-            frame = cv.resize(frame, (new_w, new_h))
-            cv.imshow('frame', frame)
-
-        if trigger_pause:
-            pause = True
-            trigger_pause = False
-            pause_button.Update(text='>')
-            cansender.stop()
-
-        ## todo -- simplify the 2 lines below!!
-        delay = int(1000 / fps) - int((time.time() - T0) * 1000)
-        wait = max(delay - int(frame_extradiff(cur_frame, fps, pause) * 1000), 1)
-        cv.waitKey(wait)
+            ## todo -- simplify the 2 lines below!!
+            delay = int(1000 / fps) - int((time.time() - T0) * 1000)
+            wait = max(delay - int(frame_extradiff(cur_frame, fps, pause) * 1000), 1)
+            cv.waitKey(wait)
 
     config['video']['bookmarks'] = bookmarks
     config['video']['syncpoints'] = syncpoints
     with open(results.config, 'w') as outfile:
         json.dump(config, outfile, indent=3, sort_keys=True)
-    sys.exit(0)
+    cansender.exit()
 
 
 main()

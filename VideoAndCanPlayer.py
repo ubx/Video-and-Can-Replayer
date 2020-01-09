@@ -14,9 +14,6 @@ from PySimpleGUI import Button
 ##Audio: from ffpyplayer.player import MediaPlayer
 from cansender import CanSender
 
-TIME_OFFSET = 7200.0
-
-
 def inbetween(list, val):
     prev, next = None, None
     if list is not None:
@@ -34,7 +31,8 @@ def inbetween(list, val):
 def frame2time(cur_frame, syncpoints, fps):
     fsp = next(iter(syncpoints))  ## first syncpoint !
     t1 = syncpoints[fsp]
-    return (t1 - ((int(fsp) - cur_frame) / fps)) - TIME_OFFSET ## todo -- correct, where ?
+    utc_offset = datetime.fromtimestamp(t1) - datetime.utcfromtimestamp(t1)
+    return (t1 - ((int(fsp) - cur_frame) / fps)) - utc_offset.seconds
 
 
 def calcfps(syncpoints):
@@ -61,7 +59,6 @@ def frame_extradiff(cur_frame, fps, init=False):
     diff = (time.time() - frameT0) - ((cur_frame - frameC0) / fps)
     if diff > 1.0 or diff < -1.0:
         diff = 0.0
-    ##print('F_diff:', diff)
     return diff
 
 
@@ -80,12 +77,10 @@ def main():
         raise SystemExit(errno.EINVAL)
     results = parser.parse_args()
 
-    config = {}
     with open(results.config, 'r') as read_file:
         config = json.load(read_file)
 
     # ---===--- Get the videofilename --- #
-    videofilename = None
     try:
         videofilename = config['video']['filename']
     except:
@@ -94,7 +89,6 @@ def main():
             return
 
     # ---===--- Get the canfilename --- #
-    canlogfilename = None
     try:
         canlogfilename = config['canlog']['filename']
     except:

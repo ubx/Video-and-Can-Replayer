@@ -37,9 +37,10 @@ class CanSender(threading.Thread):
                 pass
 
             self.reader.stop()
+            sleep(0.1)
             self.reader.__exit__()
             self.runevent.clear()
-            if self.killevent.isSet():
+            if not self.killevent.isSet():
                 break
 
     def resume(self, start_time):
@@ -52,7 +53,7 @@ class CanSender(threading.Thread):
     def exit(self):
         self.runevent.clear()
         self.reader.stop()
-        self.killevent.set()
+        self.killevent.clear()
         threading.Thread.join(self)
 
 

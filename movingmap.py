@@ -50,6 +50,8 @@ if __name__ == '__main__':
     ## todo -- use argparse
     if len(sys.argv) == 3 and sys.argv[1] == 'file':
         pos = CanlogPos(sys.argv[2])
+    elif len(sys.argv) == 4 and sys.argv[1] == 'bus':
+        pos = CanbusPos(channel=sys.argv[2], bustype=sys.argv[3])
     else:
         pos = CanbusPos(channel='vcan0', bustype='socketcan')
     pos.start()

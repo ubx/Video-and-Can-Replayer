@@ -9,8 +9,9 @@
    },
    "description": "Flug vom 2019-10-21",
    "video": {
-      "aspectratio": 2,
+      "aspectratio": 1.0,
       "bookmarks": [
+         12993,
          14880,
          35203,
          45789,

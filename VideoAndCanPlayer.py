@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 import argparse
-import os
-import threading
 
 import helptext
 import json

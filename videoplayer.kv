@@ -1,0 +1,70 @@
+BoxLayout:
+
+    orientation: 'vertical'
+    spacing: 5
+    padding: 5
+
+    VideoPlayer:
+        id: video_player
+        source: app.get_file()
+        allow_stretch: True
+        state: 'stop'
+        on_state: app.replay(args[1],video_player.position)
+        on_position: app.on_position(args[1])
+
+    BoxLayout:
+        size_hint_y: None
+        height: '48dp'
+
+        Button:
+            text: 'Next'
+            on_press: app.btn_next(video_player)
+
+        Button:
+            text: 'Previous'
+            on_press: app.btn_previous(video_player)
+
+        Button:
+            text: 'Bookmark'
+
+        Button:
+            text: 'Syncpoint'
+
+
+    BoxLayout:
+        orientation: 'vertical'
+        size_hint_y: None
+        height: '48dp'
+
+        Slider:
+            id: s1
+
+        Label:
+            text: app.realtime(s1.value)
+
+
+    BoxLayout:
+        orientation: 'vertical'
+        size_hint_y: None
+        height: '48dp'
+
+        canvas:
+            Rectangle:
+                id: bookmarks
+                pos: 10, 40
+                size: root.width-20, 10
+
+    BoxLayout:
+        orientation: 'horizontal'
+        size_hint_y: None
+        size_hint_x: 0.3
+        height: '24'
+
+        Label:
+            text: 'UTC'
+        Label:
+            text: '12:33'
+        Label:
+            text: 'Pos'
+        Label:
+            text: '7.0 / 47.0'

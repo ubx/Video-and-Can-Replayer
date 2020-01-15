@@ -1,6 +1,27 @@
 from kivy.app import App
+from kivy.uix.modalview import ModalView
 from kivy.uix.videoplayer import VideoPlayer
 from datetime import datetime
+
+
+class NoTitleDialog(ModalView):
+    def __init__(self, videoplayer, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.videoplayer = videoplayer
+        self.ts = None
+
+    def checkTime(self, sp):
+        try:
+            self.ts = (datetime.strptime(sp, '%Y-%m-%d %H:%M:%S') - datetime(1970, 1, 1)).total_seconds()
+            return self.ts
+        except:
+            return None
+
+    def set_ts(self):
+        print('ts', self.ts)
+        ##graph.DrawLine((cur_frame, 0), (cur_frame, 10), width=3, color='green')
+        self.videoplayer.bookmarks.append(int(self.ts))
+        self.videoplayer.bookmarks.sort()
 
 
 class VideoplayerApp(App):
@@ -40,11 +61,15 @@ class VideoplayerApp(App):
     def btn_next(self, *args):
         videoplayer: VideoPlayer = args[0]
         videoplayer.state = 'pause'
-        vp = self.cur_position + 5.0 # todo -- ???
+        vp = self.cur_position + 5.0  # todo -- ???
         _, next = self.inbetween(self.bookmarks, vp)
         print('vp', vp, 'next', next)
         if next:
             videoplayer.seek(next / videoplayer.duration)
+
+    def btn_bookmark(self, *args):
+        dialog = NoTitleDialog(self)
+        dialog.open()
 
     def video_position2time(self, vpos, syncpoints):
         fsp = next(iter(syncpoints))  # first syncpoint !

@@ -4,7 +4,7 @@ from kivy.uix.videoplayer import VideoPlayer
 from datetime import datetime
 
 
-class NoTitleDialog(ModalView):
+class ModalDialog(ModalView):
     def __init__(self, videoplayer, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.videoplayer: VideoPlayer = videoplayer
@@ -70,7 +70,7 @@ class VideoplayerApp(App):
     def btn_syncpoint(self, *args):
         videoplayer: VideoPlayer = args[0]
         videoplayer.state = 'pause'
-        dialog = NoTitleDialog(self)
+        dialog = ModalDialog(self)
         dialog.open()
 
     def video_position2time(self, vpos, syncpoints):

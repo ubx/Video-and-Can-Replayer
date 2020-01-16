@@ -1,4 +1,6 @@
 from kivy.app import App
+from kivy.graphics.context_instructions import Color
+from kivy.graphics.vertex_instructions import Line
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.modalview import ModalView
 from kivy.uix.videoplayer import VideoPlayer
@@ -26,7 +28,14 @@ class ModalDialog(ModalView):
 
 
 class MainWindow(BoxLayout):
-    pass
+
+    def draw_bookmarg(self, position):
+        base = 10
+        max = self.width - 20
+        lpos = 10 + ((max - base) * (position / self.ids.video_player.duration))
+        with self.ids.bookmarks.canvas:
+            Color(0, 1, 0)
+            Line(points=(lpos, 40, lpos, 60), width=1.2, )
 
 
 class VideoplayerApp(App):
@@ -76,9 +85,10 @@ class VideoplayerApp(App):
             videoplayer.seek(next / videoplayer.duration)
 
     def btn_bookmark(self, *args):
-        ##graph.DrawLine((cur_frame, 0), (cur_frame, 10), width=3, color='green')
-        self.bookmarks.append(self.cur_position)
-        self.bookmarks.sort()
+        if args[0].duration > 100.0:  # todo -- ????
+            self.root.draw_bookmarg(self.cur_position)
+            self.bookmarks.append(int(self.cur_position))
+            self.bookmarks.sort()
 
     def btn_syncpoint(self, *args):
         videoplayer: VideoPlayer = args[0]
@@ -105,6 +115,9 @@ class VideoplayerApp(App):
                         next = list[i + 1]
                         break
         return prev if prev is None else float(prev), next if next is None else float(next)
+
+    def on_start(self):
+        pass
 
 
 if __name__ == '__main__':

@@ -53,9 +53,6 @@ def main():
     if len(syncpoints) == 0:
         print("No synpoints for video, exit")
 
-    ## todo -- just a remainder
-    ### sp = f'{25075}'  ## no int key in json !!!
-
     cansender = CanSender(canlogfilename, config['canbus']['channel'], config['canbus']['interface'])
     cansender.start()
 

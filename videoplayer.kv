@@ -29,6 +29,7 @@ BoxLayout:
 
         Button:
             text: 'Syncpoint'
+            on_press: app.btn_syncpoint(video_player)
 
 
     BoxLayout:
@@ -68,3 +69,30 @@ BoxLayout:
             text: 'Pos'
         Label:
             text: '7.0 / 47.0'
+
+
+<NoTitleDialog>:
+    size_hint: None, None
+    size: 400, 180
+
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: "Enter utc time"
+        Label:
+            id: label
+        TextInput:
+            multiline: False
+            hint_text:'Enter time'
+            on_text: root.ts=root.checkTime(args[1]); label.text= 'YYYY-MM-DD HH:MM:SS' if root.ts is None else args[1]; btn_bookmark.disabled=root.ts is None
+
+        BoxLayout:
+            orientation: 'horizontal'
+            Button:
+                id: btn_bookmark
+                text: "OK"
+                disabled: True
+                on_release: root.set_syncpoint(); root.dismiss()
+            Button:
+                text: "Cancel"
+                on_release: root.dismiss()

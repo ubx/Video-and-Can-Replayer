@@ -7,7 +7,7 @@ from datetime import datetime
 class NoTitleDialog(ModalView):
     def __init__(self, videoplayer, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.videoplayer = videoplayer
+        self.videoplayer: VideoPlayer = videoplayer
         self.ts = None
 
     def checkTime(self, sp):
@@ -17,11 +17,11 @@ class NoTitleDialog(ModalView):
         except:
             return None
 
-    def set_ts(self):
-        print('ts', self.ts)
-        ##graph.DrawLine((cur_frame, 0), (cur_frame, 10), width=3, color='green')
+    def set_syncpoint(self):
+        print('ts', self.ts, 'cur_position', self.videoplayer.cur_position)
         self.videoplayer.bookmarks.append(int(self.ts))
         self.videoplayer.bookmarks.sort()
+        self.videoplayer.syncpoints[f'{int(round(self.videoplayer.cur_position))}'] = self.ts
 
 
 class VideoplayerApp(App):
@@ -67,7 +67,9 @@ class VideoplayerApp(App):
         if next:
             videoplayer.seek(next / videoplayer.duration)
 
-    def btn_bookmark(self, *args):
+    def btn_syncpoint(self, *args):
+        videoplayer: VideoPlayer = args[0]
+        videoplayer.state = 'pause'
         dialog = NoTitleDialog(self)
         dialog.open()
 

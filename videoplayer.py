@@ -1,4 +1,5 @@
 from kivy.app import App
+from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.modalview import ModalView
 from kivy.uix.videoplayer import VideoPlayer
 from datetime import datetime
@@ -24,6 +25,10 @@ class ModalDialog(ModalView):
         self.videoplayer.syncpoints[f'{int(round(self.videoplayer.cur_position))}'] = self.ts
 
 
+class MainWindow(BoxLayout):
+    pass
+
+
 class VideoplayerApp(App):
     def __init__(self, file, syncpoints, bookmarks, cansender=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -32,6 +37,9 @@ class VideoplayerApp(App):
         self.bookmarks = bookmarks
         self.cansender = cansender
         self.cur_position = 0
+
+    def build(self):
+        return MainWindow()
 
     def get_file(self):
         return self.file
@@ -66,6 +74,11 @@ class VideoplayerApp(App):
         print('vp', vp, 'next', next)
         if next:
             videoplayer.seek(next / videoplayer.duration)
+
+    def btn_bookmark(self, *args):
+        ##graph.DrawLine((cur_frame, 0), (cur_frame, 10), width=3, color='green')
+        self.bookmarks.append(self.cur_position)
+        self.bookmarks.sort()
 
     def btn_syncpoint(self, *args):
         videoplayer: VideoPlayer = args[0]

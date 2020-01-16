@@ -29,13 +29,17 @@ class ModalDialog(ModalView):
 
 class MainWindow(BoxLayout):
 
-    def draw_bookmarg(self, position):
+    def draw_bookmarks(self, position):
         base = 10
         max = self.width - 20
         lpos = 10 + ((max - base) * (position / self.ids.video_player.duration))
         with self.ids.bookmarks.canvas:
             Color(0, 1, 0)
             Line(points=(lpos, 40, lpos, 60), width=1.2, )
+
+    def draw_all_bookmarks(self, bookmarks):
+        for bm in bookmarks:
+            self.draw_bookmarks(bm)
 
 
 class VideoplayerApp(App):
@@ -46,6 +50,7 @@ class VideoplayerApp(App):
         self.bookmarks = bookmarks
         self.cansender = cansender
         self.cur_position = 0
+        self.cur_duration = None
 
     def build(self):
         return MainWindow()
@@ -53,8 +58,11 @@ class VideoplayerApp(App):
     def get_file(self):
         return self.file
 
-    def replay(self, *args):
-        print('replay, state=', args[0], 'position', args[1])
+    def on_state(self, *args):
+        videoplayer: VideoPlayer = args[1]
+        if self.cur_duration is None and videoplayer.duration > 100.0:
+            self.cur_duration = videoplayer.duration
+            self.root.draw_all_bookmarks(self.bookmarks)
         if args[0] == 'play':
             self.cansender.resume(self.video_position2time(self.cur_position, self.syncpoints))
         elif args[0] == 'pause':
@@ -64,7 +72,7 @@ class VideoplayerApp(App):
         self.cur_position = pos
 
     def realtime(self, *args):
-        return '{:6.2f}'.format(args[0] + 100)
+        return '{:6.2f}'.format(args[0])
 
     def btn_previous(self, *args):
         videoplayer: VideoPlayer = args[0]
@@ -86,7 +94,7 @@ class VideoplayerApp(App):
 
     def btn_bookmark(self, *args):
         if args[0].duration > 100.0:  # todo -- ????
-            self.root.draw_bookmarg(self.cur_position)
+            self.root.draw_bookmarks(self.cur_position)
             self.bookmarks.append(int(self.cur_position))
             self.bookmarks.sort()
 

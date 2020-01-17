@@ -45,10 +45,6 @@ def main():
     bookmarks = config['video']['bookmarks']
     bookmarks.sort()
 
-    ## todo -- rewrite for kivy
-    # for fr in bookmarks:
-    #     graph.DrawLine((fr, 0), (fr, 10), width=3, color='green')
-
     syncpoints = config['video']['syncpoints']
     if len(syncpoints) == 0:
         print("No synpoints for video, exit")

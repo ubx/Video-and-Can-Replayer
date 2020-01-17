@@ -8,6 +8,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.modalview import ModalView
 from kivy.uix.videoplayer import VideoPlayer
 
+
 class ModalDialog(ModalView):
     def __init__(self, videoplayer, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -82,7 +83,7 @@ class VideoplayerApp(App):
         videoplayer.state = 'pause'
         vp = self.cur_position
         prev, _ = self.inbetween(self.bookmarks, vp)
-        print('vp', vp, 'prev', prev)
+        ##print('vp', vp, 'prev', prev)
         if prev:
             videoplayer.seek(prev / videoplayer.duration)
 
@@ -90,7 +91,7 @@ class VideoplayerApp(App):
         videoplayer.state = 'pause'
         vp = self.cur_position + 5.0  # todo -- ???
         _, next = self.inbetween(self.bookmarks, vp)
-        print('vp', vp, 'next', next)
+        ##print('vp', vp, 'next', next)
         if next:
             videoplayer.seek(next / videoplayer.duration)
 
@@ -109,7 +110,7 @@ class VideoplayerApp(App):
         dialog.open()
 
     def video_position2time(self, vpos, syncpoints):
-        fsp = next(iter(syncpoints))  # first syncpoint !
+        fsp = next(iter(syncpoints))  # take first syncpoint !
         t1 = syncpoints[fsp]
         utc_offset = datetime.fromtimestamp(t1) - datetime.utcfromtimestamp(t1)
         return (t1 - (int(fsp) - vpos)) - utc_offset.seconds
@@ -127,10 +128,6 @@ class VideoplayerApp(App):
                         next = list[i + 1]
                         break
         return prev if prev is None else float(prev), next if next is None else float(next)
-
-    def on_start(self):
-        pass
-
 
 if __name__ == '__main__':
     VideoplayerApp().run()

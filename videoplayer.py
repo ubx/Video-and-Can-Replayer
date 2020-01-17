@@ -1,11 +1,12 @@
+from datetime import datetime
+
+import time
 from kivy.app import App
 from kivy.graphics.context_instructions import Color
 from kivy.graphics.vertex_instructions import Line, Rectangle
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.modalview import ModalView
 from kivy.uix.videoplayer import VideoPlayer
-from datetime import datetime
-
 
 class ModalDialog(ModalView):
     def __init__(self, videoplayer, *args, **kwargs):
@@ -61,20 +62,21 @@ class VideoplayerApp(App):
     def get_file(self):
         return self.file
 
-    def on_state(self, *args):
-        if args[0] == 'play':
+    def on_state(self, state):
+        if state == 'play':
             self.cansender.resume(self.video_position2time(self.cur_position, self.syncpoints))
-        elif args[0] == 'pause':
+        elif state == 'pause':
             self.cansender.stop()
 
-    def on_position(self, pos, videoplayer):
+    def on_position(self, position, videoplayer):
         if self.cur_duration is None and videoplayer.duration > 1.0:
             self.cur_duration = videoplayer.duration
             self.root.draw_all_bookmarks(self.bookmarks)
-        self.cur_position = pos
+        self.cur_position = position
 
-    def realtime(self, *args):
-        return '{:6.2f}'.format(args[0])
+    def realtime(self, cur_position):
+        seconds = self.video_position2time(cur_position, self.syncpoints)
+        return time.strftime('%H:%M:%S', time.localtime(seconds))
 
     def btn_previous(self, videoplayer):
         videoplayer.state = 'pause'
@@ -92,8 +94,8 @@ class VideoplayerApp(App):
         if next:
             videoplayer.seek(next / videoplayer.duration)
 
-    def btn_bookmark(self, *args):
-        if args[0].duration > 100.0:  # todo -- ????
+    def btn_bookmark(self, videoplayer):
+        if videoplayer.duration > 100.0:  # todo -- workorund ?
             self.root.draw_bookmarks(self.cur_position)
             self.bookmarks.append(int(self.cur_position))
             self.bookmarks.sort()

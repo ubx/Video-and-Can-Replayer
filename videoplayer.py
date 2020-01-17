@@ -1,6 +1,6 @@
 from kivy.app import App
 from kivy.graphics.context_instructions import Color
-from kivy.graphics.vertex_instructions import Line
+from kivy.graphics.vertex_instructions import Line, Rectangle
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.modalview import ModalView
 from kivy.uix.videoplayer import VideoPlayer
@@ -30,14 +30,17 @@ class ModalDialog(ModalView):
 class MainWindow(BoxLayout):
 
     def draw_bookmarks(self, position):
-        base = 10
-        max = self.width - 20
-        lpos = 10 + ((max - base) * (position / self.ids.video_player.duration))
+        base = 20
+        max = self.width - 40
+        lpos = base + ((max - base) * (position / self.ids.video_player.duration))
         with self.ids.bookmarks.canvas:
             Color(0, 1, 0)
-            Line(points=(lpos, 40, lpos, 60), width=1.2, )
+            Line(points=(lpos, 60, lpos, 70), width=1.2, )
 
     def draw_all_bookmarks(self, bookmarks):
+        with self.ids.bookmarks.canvas:
+            Color(1, 1, 1)
+            Rectangle(pos=(20, 50), size=(self.width - 40, 10))
         for bm in bookmarks:
             self.draw_bookmarks(bm)
 
@@ -59,23 +62,21 @@ class VideoplayerApp(App):
         return self.file
 
     def on_state(self, *args):
-        videoplayer: VideoPlayer = args[1]
-        if self.cur_duration is None and videoplayer.duration > 100.0:
-            self.cur_duration = videoplayer.duration
-            self.root.draw_all_bookmarks(self.bookmarks)
         if args[0] == 'play':
             self.cansender.resume(self.video_position2time(self.cur_position, self.syncpoints))
         elif args[0] == 'pause':
             self.cansender.stop()
 
-    def on_position(self, pos):
+    def on_position(self, pos, videoplayer):
+        if self.cur_duration is None and videoplayer.duration > 1.0:
+            self.cur_duration = videoplayer.duration
+            self.root.draw_all_bookmarks(self.bookmarks)
         self.cur_position = pos
 
     def realtime(self, *args):
         return '{:6.2f}'.format(args[0])
 
-    def btn_previous(self, *args):
-        videoplayer: VideoPlayer = args[0]
+    def btn_previous(self, videoplayer):
         videoplayer.state = 'pause'
         vp = self.cur_position
         prev, _ = self.inbetween(self.bookmarks, vp)
@@ -83,8 +84,7 @@ class VideoplayerApp(App):
         if prev:
             videoplayer.seek(prev / videoplayer.duration)
 
-    def btn_next(self, *args):
-        videoplayer: VideoPlayer = args[0]
+    def btn_next(self, videoplayer):
         videoplayer.state = 'pause'
         vp = self.cur_position + 5.0  # todo -- ???
         _, next = self.inbetween(self.bookmarks, vp)
@@ -98,8 +98,10 @@ class VideoplayerApp(App):
             self.bookmarks.append(int(self.cur_position))
             self.bookmarks.sort()
 
-    def btn_syncpoint(self, *args):
-        videoplayer: VideoPlayer = args[0]
+    def on_width(self):
+        self.root.draw_all_bookmarks(self.bookmarks)
+
+    def btn_syncpoint(self, videoplayer):
         videoplayer.state = 'pause'
         dialog = ModalDialog(self)
         dialog.open()

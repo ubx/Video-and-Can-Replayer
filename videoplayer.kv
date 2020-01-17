@@ -39,15 +39,15 @@
             size_hint_y: None
             height: '48dp'
 
+            Label:
+                text: app.realtime(slider.value)
+
             Slider:
                 id: slider
                 min: 0
                 max: video_player.duration
                 step: 1
                 disabled: True
-
-            Label:
-                text: app.realtime(slider.value)
 
 
         BoxLayout:

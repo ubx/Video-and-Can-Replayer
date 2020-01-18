@@ -1,6 +1,14 @@
+#:import win kivy.core.window
+
+<Map@Scatter>:
+    source: None
+    on_size: self.center = win.Window.center
+    size_hint: None, None
+
+
+
 <MainWindow>:
     BoxLayout:
-
         orientation: 'vertical'
         spacing: 5
         padding: 5
@@ -12,6 +20,9 @@
             state: 'stop'
             on_state: app.on_state(args[1])
             on_position: app.on_position(args[1], video_player); slider.value=args[1]
+
+        Map:
+            id: map
 
         BoxLayout:
             size_hint_y: None

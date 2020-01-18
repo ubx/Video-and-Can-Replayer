@@ -3,10 +3,17 @@ from datetime import datetime
 import time
 from kivy.app import App
 from kivy.graphics.context_instructions import Color
+from kivy.graphics.svg import Svg
 from kivy.graphics.vertex_instructions import Line, Rectangle
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.modalview import ModalView
+from kivy.uix.scatter import Scatter
 from kivy.uix.videoplayer import VideoPlayer
+
+from kivy.core.window import Window
+from kivy.clock import Clock
+
+from mapview import MapView
 
 
 class ModalDialog(ModalView):
@@ -47,8 +54,16 @@ class MainWindow(BoxLayout):
             self.draw_bookmarks(bm)
 
 
+class SymbolWidget(Scatter):
+
+    def __init__(self, filename, **kwargs):
+        super().__init__(**kwargs)
+        with self.canvas:
+            Svg(filename)
+
+
 class VideoplayerApp(App):
-    def __init__(self, file, syncpoints, bookmarks, cansender=None, *args, **kwargs):
+    def __init__(self, file, syncpoints, bookmarks, cansender=None, with_map=True, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.file = file
         self.syncpoints = syncpoints
@@ -56,9 +71,31 @@ class VideoplayerApp(App):
         self.cansender = cansender
         self.cur_position = 0
         self.cur_duration = None
+        self.with_map = with_map
 
     def build(self):
-        return MainWindow()
+        mainwindow = MainWindow()
+
+        if self.with_map:
+            self.lat = 47.0
+            self.lon = 7.0
+            self.th = 0.0
+            self.mapview = MapView(zoom=8, lat=self.lat, lon=self.lon)
+            self.symbol = SymbolWidget('mapview/icons/glider_symbol.svg')
+            self.mapview.add_widget(self.symbol)
+            self.symbol.center = Window.center
+            mainwindow.add_widget(self.mapview)
+
+            def clock_callback(dt):
+                self.lat += 0.01
+                self.lon += 0.01
+                self.th += 1.0
+                self.mapview.center_on(self.lat, self.lon)
+                self.symbol.center = Window.center
+                self.symbol._set_rotation(self.th * -1.0)
+            Clock.schedule_interval(clock_callback, 0.1)
+
+        return mainwindow
 
     def get_file(self):
         return self.file
@@ -128,6 +165,7 @@ class VideoplayerApp(App):
                         next = list[i + 1]
                         break
         return prev if prev is None else float(prev), next if next is None else float(next)
+
 
 if __name__ == '__main__':
     VideoplayerApp().run()

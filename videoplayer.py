@@ -5,6 +5,7 @@ from kivy.app import App
 from kivy.graphics.context_instructions import Color
 from kivy.graphics.svg import Svg
 from kivy.graphics.vertex_instructions import Line, Rectangle
+from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.modalview import ModalView
 from kivy.uix.scatter import Scatter
@@ -13,6 +14,7 @@ from kivy.uix.videoplayer import VideoPlayer
 from kivy.core.window import Window
 from kivy.clock import Clock
 
+from canreader import CanbusPos
 from mapview import MapView
 
 
@@ -62,8 +64,12 @@ class SymbolWidget(Scatter):
             Svg(filename)
 
 
+class MapWidget(AnchorLayout):
+    pass
+
+
 class VideoplayerApp(App):
-    def __init__(self, file, syncpoints, bookmarks, cansender=None, with_map=True, *args, **kwargs):
+    def __init__(self, file, syncpoints, bookmarks, cansender=None, position_srv=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.file = file
         self.syncpoints = syncpoints
@@ -71,12 +77,12 @@ class VideoplayerApp(App):
         self.cansender = cansender
         self.cur_position = 0
         self.cur_duration = None
-        self.with_map = with_map
+        self.position_srv = position_srv
 
     def build(self):
         mainwindow = MainWindow()
 
-        if self.with_map:
+        if self.position_srv:
             self.lat = 47.0
             self.lon = 7.0
             self.th = 0.0
@@ -84,16 +90,23 @@ class VideoplayerApp(App):
             self.symbol = SymbolWidget('mapview/icons/glider_symbol.svg')
             self.mapview.add_widget(self.symbol)
             self.symbol.center = Window.center
-            mainwindow.add_widget(self.mapview)
+            map = MapWidget()
+            map.add_widget(self.mapview)
+            mainwindow.ids.map.add_widget(map)
 
             def clock_callback(dt):
-                self.lat += 0.01
-                self.lon += 0.01
-                self.th += 1.0
+                lat2, lon2 = self.position_srv.getLocation()
+                if lat2 is not None and lon2 is not None:
+                    self.lat = lat2
+                    self.lon = lon2
                 self.mapview.center_on(self.lat, self.lon)
-                self.symbol.center = Window.center
-                self.symbol._set_rotation(self.th * -1.0)
-            Clock.schedule_interval(clock_callback, 0.1)
+                self.symbol._set_center(self.mapview.center)
+
+                th = self.position_srv.getTh()
+                if th:
+                    self.symbol._set_rotation(th * -1.0)
+
+            Clock.schedule_interval(clock_callback, 0.4)
 
         return mainwindow
 
@@ -168,4 +181,6 @@ class VideoplayerApp(App):
 
 
 if __name__ == '__main__':
-    VideoplayerApp().run()
+    position_srv = CanbusPos(channel='vcan0', bustype='socketcan')
+    position_srv.start()
+    VideoplayerApp(position_srv).run()

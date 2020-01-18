@@ -1,10 +1,8 @@
 #:import win kivy.core.window
 
-<Map@Scatter>:
-    source: None
-    on_size: self.center = win.Window.center
-    size_hint: None, None
-
+<Map@AnchorLayout>:
+    size_hint: 1.0, 0.4
+    anchor_x : 'right'
 
 
 <MainWindow>:

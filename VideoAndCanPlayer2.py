@@ -5,6 +5,7 @@ import helptext
 import json
 import sys
 
+from canreader import CanbusPos
 from cansender import CanSender
 from videoplayer import VideoplayerApp
 
@@ -52,7 +53,10 @@ def main():
     cansender = CanSender(canlogfilename, config['canbus']['channel'], config['canbus']['interface'])
     cansender.start()
 
-    VideoplayerApp(videofilename, syncpoints, bookmarks, cansender).run()
+
+    position_srv = CanbusPos(channel='vcan0', bustype='socketcan')
+    position_srv.start()
+    VideoplayerApp(videofilename, syncpoints, bookmarks, cansender, position_srv).run()
 
     config['video']['bookmarks'] = bookmarks
     config['video']['syncpoints'] = syncpoints

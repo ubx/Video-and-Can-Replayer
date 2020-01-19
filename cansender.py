@@ -7,13 +7,19 @@ from player2 import LogReader2
 
 
 class CanSender(threading.Thread):
-    def __init__(self, infile, channel, interface, *args, start_time=0.0, **kwargs):
+    def __init__(self, infile, channel, interface, start_time=0.0, with_internal_bus=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.infile = infile
         self.start_time = start_time
-        self.config = {'single_handle': True}
-        self.config['interface'] = interface
-        self.bus = Bus(channel, **self.config)
+        try:
+            self.config = {'single_handle': True}
+            self.config['interface'] = interface
+            self.bus = Bus(channel, **self.config)
+        except:
+            self.bus = None
+            print('WARNING Can channel', channel, 'not connected')
+        if with_internal_bus:
+            self.bus_internal = Bus(channel='internal', bustype='virtual')
         self.runevent = threading.Event()
         self.runevent.clear()
         self.killevent = threading.Event()
@@ -28,7 +34,10 @@ class CanSender(threading.Thread):
             self.in_sync = MessageSync(self.reader, timestamps=True)
             try:
                 for message in self.in_sync:
-                    self.bus.send(message)
+                    if self.bus:
+                        self.bus.send(message)
+                    if self.bus_internal:
+                        self.bus_internal.send(message)
                     if not self.runevent.isSet():
                         break
             finally:

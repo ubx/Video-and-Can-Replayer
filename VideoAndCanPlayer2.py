@@ -50,7 +50,8 @@ def main():
     if len(syncpoints) == 0:
         print("No synpoints for video, exit")
 
-    cansender = CanSender(canlogfilename, config['canbus']['channel'], config['canbus']['interface'])
+    cansender = CanSender(canlogfilename, config['canbus']['channel'], config['canbus']['interface'],
+                          with_internal_bus=True)
     cansender.start()
 
 

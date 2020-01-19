@@ -181,6 +181,6 @@ class VideoplayerApp(App):
 
 
 if __name__ == '__main__':
-    position_srv = CanbusPos(channel='vcan0', bustype='socketcan')
+    position_srv = CanbusPos(channel='internal', bustype='virtual')
     position_srv.start()
     VideoplayerApp(position_srv).run()

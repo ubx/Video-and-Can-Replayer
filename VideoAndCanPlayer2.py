@@ -55,7 +55,7 @@ def main():
     cansender.start()
 
 
-    position_srv = CanbusPos(channel='vcan0', bustype='socketcan')
+    position_srv = CanbusPos(channel='internal', bustype='virtual')
     position_srv.start()
     VideoplayerApp(videofilename, syncpoints, bookmarks, cansender, position_srv).run()
 

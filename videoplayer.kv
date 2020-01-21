@@ -1,26 +1,33 @@
 #:import win kivy.core.window
 
-<Map@AnchorLayout>:
-    size_hint: 1.0, 0.4
-    anchor_x : 'right'
+<MapWidget@AnchorLayout>:
+
+<SymbolWidget@Scatter>:
 
 
 <MainWindow>:
     BoxLayout:
         orientation: 'vertical'
-        spacing: 0
-        padding: 0
+        AnchorLayout
 
-        VideoPlayer:
-            id: video_player
-            source: app.get_file()
-            allow_stretch: True
-            state: 'stop'
-            on_state: app.on_state(args[1])
-            on_position: app.on_position(args[1], video_player); slider.value=args[1]
+            VideoPlayer:
+                id: video_player
+                source: app.get_file()
+                allow_stretch: True
+                state: 'stop'
+                on_state:
+                    app.on_state(args[1])
+                on_position:
+                    app.on_position(args[1], video_player)
+                    slider.value=args[1]
 
-        Map:
-            id: map
+            MapWidget:
+                id: map
+                anchor_x:'right'
+                anchor_y: 'bottom'
+                SymbolWidget:
+                    id: symbol
+
 
         BoxLayout:
             size_hint_y: None
@@ -28,19 +35,23 @@
 
             Button:
                 text: 'Next'
-                on_press: app.btn_next(video_player)
+                on_press:
+                    app.btn_next(video_player)
 
             Button:
                 text: 'Previous'
-                on_press: app.btn_previous(video_player)
+                on_press:
+                    app.btn_previous(video_player)
 
             Button:
                 text: 'Bookmark'
-                on_press: app.btn_bookmark(video_player)
+                on_press:
+                    app.btn_bookmark(video_player)
 
             Button:
                 text: 'Syncpoint'
-                on_press: app.btn_syncpoint(video_player)
+                on_press:
+                    app.btn_syncpoint(video_player)
 
 
         BoxLayout:
@@ -49,7 +60,8 @@
             height: '48dp'
 
             Label:
-                text: app.realtime(slider.value)
+                text:
+                    app.realtime(slider.value)
 
             Slider:
                 id: slider
@@ -64,7 +76,8 @@
             orientation: 'vertical'
             size_hint_y: None
             height: '48dp'
-            on_width: self.canvas.clear();app.on_width()
+            on_width:
+                self.canvas.clear();app.on_width()
 
         BoxLayout:
             orientation: 'horizontal'
@@ -95,7 +108,10 @@
         TextInput:
             multiline: False
             hint_text:'Enter time'
-            on_text: root.ts=root.checkTime(args[1]); label.text= 'YYYY-MM-DD HH:MM:SS' if root.ts is None else args[1]; btn_bookmark.disabled=root.ts is None
+            on_text:
+                root.ts=root.checkTime(args[1])
+                label.text= 'YYYY-MM-DD HH:MM:SS' if root.ts is None else args[1]
+                btn_bookmark.disabled=root.ts is None
 
         BoxLayout:
             orientation: 'horizontal'
@@ -103,7 +119,10 @@
                 id: btn_bookmark
                 text: "OK"
                 disabled: True
-                on_release: root.set_syncpoint(); root.dismiss()
+                on_release:
+                    root.set_syncpoint()
+                    root.dismiss()
             Button:
                 text: "Cancel"
-                on_release: root.dismiss()
+                on_release:
+                    root.dismiss()

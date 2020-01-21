@@ -58,13 +58,13 @@ class MainWindow(BoxLayout):
 
 class SymbolWidget(Scatter):
 
-    def __init__(self, filename, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
         with self.canvas:
-            Svg(filename)
+            Svg('mapview/icons/glider_symbol.svg')
 
 
-class MapWidget(AnchorLayout):
+class MapWidget(Scatter):
     pass
 
 
@@ -80,19 +80,19 @@ class VideoplayerApp(App):
         self.position_srv = position_srv
 
     def build(self):
-        mainwindow = MainWindow()
+        self.mainwindow = MainWindow()
 
         if self.position_srv:
             self.lat = 47.0
             self.lon = 7.0
             self.th = 0.0
             self.mapview = MapView(zoom=8, lat=self.lat, lon=self.lon)
-            self.symbol = SymbolWidget('mapview/icons/glider_symbol.svg')
-            self.mapview.add_widget(self.symbol)
-            self.symbol.center = Window.center
-            map = MapWidget()
-            map.add_widget(self.mapview)
-            mainwindow.ids.map.add_widget(map)
+            #self.symbol = SymbolWidget()
+            #self.symbol.center = Window.center
+            self.map = MapWidget()
+            self.map.add_widget(self.mapview)
+            self.mainwindow.ids.map.add_widget(self.map)
+            #self.map.add_widget(self.mainwindow.ids.symbol)
 
             def clock_callback(dt):
                 lat2, lon2 = self.position_srv.getLocation()
@@ -100,15 +100,17 @@ class VideoplayerApp(App):
                     self.lat = lat2
                     self.lon = lon2
                 self.mapview.center_on(self.lat, self.lon)
-                self.symbol._set_center(self.mapview.center)
+                ids = self.mainwindow.ids
+                cent = self.mainwindow.center
+                ##ids.symbol._set_center(cent)
 
                 th = self.position_srv.getTh()
                 if th:
-                    self.symbol._set_rotation(th * -1.0)
+                    ids.symbol._set_rotation(th * -1.0)
 
-            Clock.schedule_interval(clock_callback, 0.4)
+            Clock.schedule_interval(clock_callback, 0.24)
 
-        return mainwindow
+        return self.mainwindow
 
     def get_file(self):
         return self.file

@@ -1,17 +1,14 @@
 from datetime import datetime
 
 import time
+
 from kivy.app import App
-from kivy.graphics.context_instructions import Color
+from kivy.graphics import Color, Line, Rectangle
 from kivy.graphics.svg import Svg
-from kivy.graphics.vertex_instructions import Line, Rectangle
-from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.modalview import ModalView
 from kivy.uix.scatter import Scatter
 from kivy.uix.videoplayer import VideoPlayer
-
-from kivy.core.window import Window
 from kivy.clock import Clock
 
 from canreader import CanbusPos
@@ -87,12 +84,13 @@ class VideoplayerApp(App):
             self.lon = 7.0
             self.th = 0.0
             self.mapview = MapView(zoom=8, lat=self.lat, lon=self.lon)
-            #self.symbol = SymbolWidget()
-            #self.symbol.center = Window.center
+            # self.symbol = SymbolWidget()
+            # self.symbol.center = Window.center
             self.map = MapWidget()
             self.map.add_widget(self.mapview)
             self.mainwindow.ids.map.add_widget(self.map)
-            #self.map.add_widget(self.mainwindow.ids.symbol)
+
+            # self.map.add_widget(self.mainwindow.ids.symbol)
 
             def clock_callback(dt):
                 lat2, lon2 = self.position_srv.getLocation()

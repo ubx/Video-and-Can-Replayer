@@ -38,17 +38,18 @@ class ModalDialog(ModalView):
 class MainWindow(BoxLayout):
 
     def draw_bookmarks(self, position):
-        base = 20
-        max = self.width - 40
+        base = 5
+        max = self.width - 10
         lpos = base + ((max - base) * (position / self.ids.video_player.duration))
         with self.ids.bookmarks.canvas:
             Color(0, 1, 0)
             Line(points=(lpos, 60, lpos, 70), width=1.2, )
 
     def draw_all_bookmarks(self, bookmarks):
+        self.ids.bookmarks.canvas.clear()
         with self.ids.bookmarks.canvas:
             Color(1, 1, 1)
-            Rectangle(pos=(20, 50), size=(self.width - 40, 10))
+            Rectangle(pos=(5, 50), size=(self.width - 10, 10))
         for bm in bookmarks:
             self.draw_bookmarks(bm)
 
@@ -90,6 +91,9 @@ class VideoplayerApp(App):
             self.map.add_widget(self.mapview)
             self.mainwindow.ids.map.add_widget(self.map)
 
+            vp = self.mainwindow.ids.video_player
+            pass
+
             # self.map.add_widget(self.mainwindow.ids.symbol)
 
             def clock_callback(dt):
@@ -106,7 +110,7 @@ class VideoplayerApp(App):
                 if th:
                     ids.symbol._set_rotation(th * -1.0)
 
-            Clock.schedule_interval(clock_callback, 0.24)
+            Clock.schedule_interval(clock_callback, 0.25)
 
         return self.mainwindow
 

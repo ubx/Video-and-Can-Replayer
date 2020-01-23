@@ -1,6 +1,13 @@
 #:import win kivy.core.window
 
-<MapWidget@AnchorLayout>:
+<MapWidget@Scatter>:
+#    #  for debugging:
+#    canvas.before:
+#        Color:
+#            rgba: 1, 1, 1, 1
+#        Rectangle:
+#            pos: self.pos
+#            size: self.size
 
 <SymbolWidget@Scatter>:
 
@@ -8,8 +15,7 @@
 <MainWindow>:
     BoxLayout:
         orientation: 'vertical'
-        AnchorLayout
-
+        AnchorLayout:
             VideoPlayer:
                 id: video_player
                 source: app.get_file()
@@ -22,14 +28,16 @@
                     slider.value=args[1]
 
             MapWidget:
-                id: map
-                anchor_x:'right'
-                anchor_y: 'bottom'
-                SymbolWidget:
-                    id: symbol
+                AnchorLayout:
+                    id: map
+                    size_hint: 300,300
+                    SymbolWidget:
+                        id: symbol
+                        center: map.center
 
 
         BoxLayout:
+            orientation: 'horizontal'
             size_hint_y: None
             height: '48dp'
 
@@ -69,30 +77,30 @@
                 max: video_player.duration
                 step: 1
                 disabled: True
+                on_width:
+                    app.on_width()
 
 
         BoxLayout:
             id: bookmarks
             orientation: 'vertical'
-            size_hint_y: None
-            height: '48dp'
-            on_width:
-                self.canvas.clear();app.on_width()
+            size_hint: None, None
+            height: '92'
 
-        BoxLayout:
-            orientation: 'horizontal'
-            size_hint_y: None
-            size_hint_x: 0.3
-            height: '24'
-
-            Label:
-                text: 'UTC'
-            Label:
-                text: '12:33'
-            Label:
-                text: 'Pos'
-            Label:
-                text: '7.0 / 47.0'
+#        BoxLayout:
+#            orientation: 'horizontal'
+#            size_hint_y: None
+#            size_hint_x: 0.3
+#            height: '24'
+#
+#            Label:
+#                text: 'UTC'
+#            Label:
+#                text: '12:33'
+#            Label:
+#                text: 'Pos'
+#            Label:
+#                text: '7.0 / 47.0'
 
 
 <ModalDialog>:

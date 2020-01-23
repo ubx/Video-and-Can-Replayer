@@ -5,7 +5,7 @@
    },
    "canlog": {
       "date": "2019-10-21",
-      "filename": "data/candump-2019-09-21_110938-gps.db"
+      "filename": "../data/candump-2019-09-21_110938-gps.db"
    },
    "description": "Flug vom 2019-10-21",
    "video": {
@@ -20,7 +20,7 @@
          217600,
          235355
       ],
-      "filename": "data/total-Aug-audio-x264.mp4",
+      "filename": "../data/total-Aug-audio-x264.mp4",
       "fps": 30,
       "syncpoints": {
          "14881": 1569062318.0,

@@ -19,6 +19,9 @@ def main():
     parser.add_argument('config', metavar='config-file', type=str,
                         help=helptext.HELP_CONFIG_FILE)
 
+    parser.add_argument('--map', default=False, action='store_true', required=False,
+                        help='display a moving map')
+
     # print help message when no arguments were given
     if len(sys.argv) < 1:
         parser.print_help(sys.stderr)
@@ -54,9 +57,12 @@ def main():
                           with_internal_bus=True)
     cansender.start()
 
+    if results.map:
+        position_srv = CanbusPos(channel='internal', bustype='virtual')
+        position_srv.start()
+    else:
+        position_srv = None
 
-    position_srv = CanbusPos(channel='internal', bustype='virtual')
-    position_srv.start()
     VideoplayerApp(videofilename, syncpoints, bookmarks, cansender, position_srv).run()
 
     config['video']['bookmarks'] = bookmarks

@@ -1,19 +1,30 @@
 from datetime import datetime
 
 import time
+from os.path import join, dirname
 
 from kivy.app import App
 from kivy.graphics import Color, Line, Rectangle
 from kivy.graphics.svg import Svg
+from kivy.properties import NumericProperty, StringProperty, OptionProperty
+from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.modalview import ModalView
 from kivy.uix.scatter import Scatter
 from kivy.uix.videoplayer import VideoPlayer
 from kivy.clock import Clock
+from kivy.uix.widget import Widget
 
 from canreader import CanbusPos
-from mapview import MapView
+from mapview import MapView, MapMarker
 
+from kivy.config import Config
+
+Config.set('graphics', 'width', '1000')
+Config.set('graphics', 'height', '800')
+
+
+##Config.write()
 
 class ModalDialog(ModalView):
     def __init__(self, videoplayer, *args, **kwargs):
@@ -54,10 +65,14 @@ class MainWindow(BoxLayout):
             self.draw_bookmarks(bm)
 
 
-class SymbolWidget(Scatter):
+class Marker(MapMarker, Scatter):
+    #anchor_x = NumericProperty(0.5)
+    #anchor_y = NumericProperty(0.5)
+    lat = NumericProperty(0)
+    lon = NumericProperty(0)
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         with self.canvas:
             Svg('mapview/icons/glider_symbol.svg')
 
@@ -85,16 +100,7 @@ class VideoplayerApp(App):
             self.lon = 7.0
             self.th = 0.0
             self.mapview = MapView(zoom=8, lat=self.lat, lon=self.lon)
-            # self.symbol = SymbolWidget()
-            # self.symbol.center = Window.center
-            self.map = MapWidget()
-            self.map.add_widget(self.mapview)
-            self.mainwindow.ids.map.add_widget(self.map)
-
-            vp = self.mainwindow.ids.video_player
-            pass
-
-            # self.map.add_widget(self.mainwindow.ids.symbol)
+            self.mainwindow.ids.map.add_widget(self.mapview)
 
             def clock_callback(dt):
                 lat2, lon2 = self.position_srv.getLocation()
@@ -102,15 +108,15 @@ class VideoplayerApp(App):
                     self.lat = lat2
                     self.lon = lon2
                 self.mapview.center_on(self.lat, self.lon)
-                ids = self.mainwindow.ids
-                cent = self.mainwindow.center
-                ##ids.symbol._set_center(cent)
-
+                self.mainwindow.ids.marker.lat = self.lat
+                self.mainwindow.ids.marker.lon = self.lon
                 th = self.position_srv.getTh()
                 if th:
-                    ids.symbol._set_rotation(th * -1.0)
+                    self.mainwindow.ids.marker._set_rotation(th * -1.0)
 
             Clock.schedule_interval(clock_callback, 0.25)
+        else:
+            self.mainwindow.ids.mapwidget.clear_widgets()
 
         return self.mainwindow
 

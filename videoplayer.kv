@@ -1,6 +1,9 @@
 #:import win kivy.core.window
 
+<Marker@MapMarker, Scatter>:
+
 <MapWidget@Scatter>:
+    size_hint: None,None
 #    #  for debugging:
 #    canvas.before:
 #        Color:
@@ -9,15 +12,18 @@
 #            pos: self.pos
 #            size: self.size
 
-<SymbolWidget@Scatter>:
-
 
 <MainWindow>:
     BoxLayout:
         orientation: 'vertical'
         AnchorLayout:
+            anchor_x: 'right'
+            anchor_y: 'bottom'
+
             VideoPlayer:
                 id: video_player
+                size_hint: 1.0,1.0
+
                 source: app.get_file()
                 allow_stretch: True
                 state: 'stop'
@@ -28,12 +34,17 @@
                     slider.value=args[1]
 
             MapWidget:
-                AnchorLayout:
+                id: mapwidget
+                AnchorLayout
+                    anchor_x: 'center'
+                    anchor_y: 'center'
                     id: map
-                    size_hint: 300,300
-                    SymbolWidget:
-                        id: symbol
-                        center: map.center
+                AnchorLayout
+                    anchor_x: 'center'
+                    anchor_y: 'center'
+                    Marker:
+                        id: marker
+
 
 
         BoxLayout:

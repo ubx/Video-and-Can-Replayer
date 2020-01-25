@@ -1,24 +1,18 @@
+import time
 from datetime import datetime
 
-import time
-from os.path import join, dirname
-
 from kivy.app import App
+from kivy.clock import Clock
+from kivy.config import Config
 from kivy.graphics import Color, Line, Rectangle
 from kivy.graphics.svg import Svg
-from kivy.properties import NumericProperty, StringProperty, OptionProperty
-from kivy.uix.anchorlayout import AnchorLayout
+from kivy.properties import NumericProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.modalview import ModalView
 from kivy.uix.scatter import Scatter
 from kivy.uix.videoplayer import VideoPlayer
-from kivy.clock import Clock
-from kivy.uix.widget import Widget
 
 from canreader import CanbusPos
-from mapview import MapView, MapMarker
-
-from kivy.config import Config
 
 Config.set('graphics', 'width', '1000')
 Config.set('graphics', 'height', '800')
@@ -65,9 +59,12 @@ class MainWindow(BoxLayout):
             self.draw_bookmarks(bm)
 
 
+from kivy.garden.mapview import MapMarker
+
+
 class Marker(MapMarker, Scatter):
-    #anchor_x = NumericProperty(0.5)
-    #anchor_y = NumericProperty(0.5)
+    # anchor_x = NumericProperty(0.5)
+    # anchor_y = NumericProperty(0.5)
     lat = NumericProperty(0)
     lon = NumericProperty(0)
 
@@ -99,6 +96,7 @@ class VideoplayerApp(App):
             self.lat = 47.0
             self.lon = 7.0
             self.th = 0.0
+            from kivy.garden.mapview import MapView
             self.mapview = MapView(zoom=8, lat=self.lat, lon=self.lon)
             self.mainwindow.ids.map.add_widget(self.mapview)
 
@@ -110,6 +108,7 @@ class VideoplayerApp(App):
                 self.mapview.center_on(self.lat, self.lon)
                 self.mainwindow.ids.marker.lat = self.lat
                 self.mainwindow.ids.marker.lon = self.lon
+
                 th = self.position_srv.getTh()
                 if th:
                     self.mainwindow.ids.marker._set_rotation(th * -1.0)

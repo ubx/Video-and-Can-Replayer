@@ -71,6 +71,10 @@ class CanlogPos(threading.Thread):
         return self.th
 
 
+def toDeg(val):
+    return val + 360.0 if val < 0.0 else val
+
+
 class CanbusPos(threading.Thread):
     def __init__(self, channel, bustype, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -78,6 +82,7 @@ class CanbusPos(threading.Thread):
         self.lat = None
         self.lon = None
         self.th = None
+        self.wind_direction = None
 
     def run(self):
         try:
@@ -87,11 +92,15 @@ class CanbusPos(threading.Thread):
                 elif message.arbitration_id == 1037:
                     self.lon = getDoubleL(message.data)
                 elif message.arbitration_id == 321:
-                    th = getFloat(message.data)
-                    if th < 0.0:
-                        self.th = th + 360.0
-                    else:
-                        self.th = th
+                    self.th = toDeg(getFloat(message.data))
+                elif message.arbitration_id == 1040:
+                    self.tt = getFloat(message.data)
+                elif message.arbitration_id == 334:
+                    self.wind_direction = toDeg(getFloat(message.data))
+                    if self.tt and self.th and self.wind_direction:
+                        print('TT={:3.1f} TH={:3.1f} Diff={:3.1f} Wind_dir={:3.1f}'.format(self.tt, self.th,
+                                                                                           self.tt - self.th,
+                                                                                           self.wind_direction))
         except:
             pass
 

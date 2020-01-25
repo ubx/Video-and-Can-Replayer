@@ -1,6 +1,6 @@
 #:import win kivy.core.window
 
-<Marker@MapMarker, Scatter>:
+<Marker@MapMarker>:
 
 <MapWidget@Scatter>:
     size_hint: None,None
@@ -71,6 +71,10 @@
                 text: 'Syncpoint'
                 on_press:
                     app.btn_syncpoint(video_player)
+            Button:
+                text: 'Exit'
+                on_press:
+                    app.stop()
 
 
         BoxLayout:

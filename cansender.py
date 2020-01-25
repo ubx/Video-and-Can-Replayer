@@ -1,4 +1,5 @@
 import threading
+from threading import Thread
 from time import sleep
 
 from can import Bus, MessageSync
@@ -6,9 +7,10 @@ from can import Bus, MessageSync
 from player2 import LogReader2
 
 
-class CanSender(threading.Thread):
+class CanSender(Thread):
     def __init__(self, infile, channel, interface, start_time=0.0, with_internal_bus=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.daemon = True
         self.infile = infile
         self.start_time = start_time
         try:
@@ -69,7 +71,10 @@ class CanSender(threading.Thread):
         if self.reader:
             self.stop_reader()
         self.killevent.clear()
-        threading.Thread.join(self)
+        if self.bus:
+            self.bus.shutdown()
+        if self.bus_internal:
+            self.bus_internal.shutdown()
 
 
 if __name__ == '__main__':

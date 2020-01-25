@@ -9,16 +9,8 @@
 # build/lib/mapview/source.py: 5
 # build/lib/mapview/utils.py: 7,8
 # build/lib/mapview/view.py: 16,17,18,19,513
-# mapview/clustered_marker_layer.py: 12
-# mapview/downloader.py: 5
-# mapview/geojson.py: 27,28,29
-# mapview/mbtsource.py: 15
-# mapview/source.py: 5
-# mapview/utils.py: 7,8
-# mapview/view.py: 16,17,18,19,513
 # movingmap.py: 3,4,5,6,33
-# movingmap2.py: 3,4,5,6,7,31
-# videoplayer.py: 6,7,8,9,10,11,12
+# videoplayer.py: 7,8,9,10,11,12,13,62,99
 Kivy == 1.11.1
 
 # VideoAndCanPlayer2.py: 4
@@ -29,14 +21,13 @@ numpy == 1.18.1
 
 # canlogreader.py: 5
 # canreader.py: 5,6
-# cansender.py: 4
+# cansender.py: 5
 # logfile2sqldb.py: 15
 # player2.py: 9
 # sqlite2.py: 10
 python_can == 3.3.2
 
 # build/lib/mapview/downloader.py: 10
-# mapview/downloader.py: 10
 requests == 2.22.0
 
 # LineMapLayer.py: 6,7,61
@@ -47,14 +38,5 @@ requests == 2.22.0
 # build/lib/mapview/mbtsource.py: 13,14
 # build/lib/mapview/source.py: 7,9,10
 # build/lib/mapview/view.py: 21,23,24
-# mapview/__init__.py: 31
-# mapview/clustered_marker_layer.py: 9
-# mapview/downloader.py: 13
-# mapview/geojson.py: 30,31,32
-# mapview/mbtsource.py: 13,14
-# mapview/source.py: 7,9,10
-# mapview/view.py: 21,23,24
 # movingmap.py: 9
-# movingmap2.py: 10
-# videoplayer.py: 15
 rmap == 7.5

@@ -31,7 +31,7 @@
                     app.on_state(args[1])
                 on_position:
                     app.on_position(args[1], video_player)
-                    slider.value=args[1]
+                    progress_bar.value=args[1]
                 on_touch_down:
                     self.state = 'pause'
                 on_touch_move:
@@ -91,14 +91,13 @@
 
             Label:
                 text:
-                    app.realtime(slider.value)
+                    app.realtime(progress_bar.value)
 
-            Slider:
-                id: slider
+            ProgressBar:
+                id: progress_bar
                 min: 0
                 max: video_player.duration
                 step: 1
-                disabled: True
                 on_width:
                     app.on_width()
 
@@ -107,7 +106,7 @@
             id: bookmarks
             orientation: 'vertical'
             size_hint: None, None
-            height: '92'
+            height: '64'
 
 #        BoxLayout:
 #            orientation: 'horizontal'

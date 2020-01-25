@@ -43,8 +43,8 @@ class ModalDialog(ModalView):
 class MainWindow(BoxLayout):
 
     def draw_bookmarks(self, position):
-        base = 5
-        max = self.width - 10
+        base = 0
+        max = self.width - 0
         lpos = base + ((max - base) * (position / self.ids.video_player.duration))
         with self.ids.bookmarks.canvas:
             Color(0, 1, 0)
@@ -54,7 +54,7 @@ class MainWindow(BoxLayout):
         self.ids.bookmarks.canvas.clear()
         with self.ids.bookmarks.canvas:
             Color(1, 1, 1)
-            Rectangle(pos=(5, 50), size=(self.width - 10, 10))
+            Rectangle(pos=(0, 50), size=(self.width - 0, 10))
         for bm in bookmarks:
             self.draw_bookmarks(bm)
 

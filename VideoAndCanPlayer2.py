@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+import threading
 
 import helptext
 import json
@@ -9,6 +10,14 @@ from canreader import CanbusPos
 from cansender import CanSender
 from videoplayer import VideoplayerApp
 
+
+def list_threads(txt):
+    main_thread = threading.current_thread()
+    for t in threading.enumerate():
+        if t is main_thread:
+            continue
+        print(txt,t.getName(), t.isDaemon())
+        ##t.join()
 
 def main():
     global videofilename, canlogfilename
@@ -54,7 +63,7 @@ def main():
         print("No synpoints for video, exit")
 
     cansender = CanSender(canlogfilename, config['canbus']['channel'], config['canbus']['interface'],
-                          with_internal_bus=True)
+                          with_internal_bus=True, name='CanSender')
     cansender.start()
 
     if results.map:
@@ -64,12 +73,14 @@ def main():
         position_srv = None
 
     VideoplayerApp(videofilename, syncpoints, bookmarks, cansender, position_srv).run()
+    cansender.exit()
 
     config['video']['bookmarks'] = bookmarks
     config['video']['syncpoints'] = syncpoints
+
     with open(results.config, 'w') as outfile:
         json.dump(config, outfile, indent=3, sort_keys=True)
-    cansender.exit()
-
 
 main()
+list_threads('after main')
+

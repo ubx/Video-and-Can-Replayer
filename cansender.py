@@ -68,6 +68,7 @@ class CanSender(Thread):
 
     def exit(self):
         self.runevent.clear()
+        sleep(1)
         if self.reader:
             self.stop_reader()
         self.killevent.clear()

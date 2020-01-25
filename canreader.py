@@ -74,30 +74,29 @@ class CanlogPos(threading.Thread):
 class CanbusPos(threading.Thread):
     def __init__(self, channel, bustype, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._stop = threading.Event()
         self.bus = can.interface.Bus(channel=channel, bustype=bustype)
         self.lat = None
         self.lon = None
         self.th = None
 
-    def stop(self):
-        self._stop.set()
-
-    def stopped(self):
-        return self._stop.isSet()
-
     def run(self):
-        for message in self.bus:
-            if message.arbitration_id == 1036:
-                self.lat = getDoubleL(message.data)
-            elif message.arbitration_id == 1037:
-                self.lon = getDoubleL(message.data)
-            elif message.arbitration_id == 321:
-                th = getFloat(message.data)
-                if th < 0.0:
-                    self.th = th + 360.0
-                else:
-                    self.th = th
+        try:
+            for message in self.bus:
+                if message.arbitration_id == 1036:
+                    self.lat = getDoubleL(message.data)
+                elif message.arbitration_id == 1037:
+                    self.lon = getDoubleL(message.data)
+                elif message.arbitration_id == 321:
+                    th = getFloat(message.data)
+                    if th < 0.0:
+                        self.th = th + 360.0
+                    else:
+                        self.th = th
+        except:
+            pass
+
+    def exit(self):
+        self.bus.shutdown()
 
     def getLocation(self):
         return self.lat, self.lon

@@ -66,6 +66,9 @@ def main():
     VideoplayerApp(videofilename, syncpoints, bookmarks, cansender, position_srv).run()
     cansender.exit()
 
+    if position_srv:
+        position_srv.exit()
+
     config['video']['bookmarks'] = bookmarks
     config['video']['syncpoints'] = syncpoints
 

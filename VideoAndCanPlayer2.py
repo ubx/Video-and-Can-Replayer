@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import argparse
-import threading
 
 import helptext
 import json
@@ -10,14 +9,6 @@ from canreader import CanbusPos
 from cansender import CanSender
 from videoplayer import VideoplayerApp
 
-
-def list_threads(txt):
-    main_thread = threading.current_thread()
-    for t in threading.enumerate():
-        if t is main_thread:
-            continue
-        print(txt,t.getName(), t.isDaemon())
-        ##t.join()
 
 def main():
     global videofilename, canlogfilename
@@ -81,6 +72,5 @@ def main():
     with open(results.config, 'w') as outfile:
         json.dump(config, outfile, indent=3, sort_keys=True)
 
-main()
-list_threads('after main')
 
+main()

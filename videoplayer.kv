@@ -32,6 +32,13 @@
                 on_position:
                     app.on_position(args[1], video_player)
                     slider.value=args[1]
+                on_touch_down:
+                    self.state = 'pause'
+                on_touch_move:
+                    self.state = 'pause'
+                on_touch_up:
+                    self.state = 'pause'
+
 
             MapWidget:
                 id: mapwidget

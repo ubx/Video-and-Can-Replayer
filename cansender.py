@@ -26,6 +26,7 @@ class CanSender(Thread):
         self.runevent.clear()
         self.killevent = threading.Event()
         self.killevent.set()
+        self.doneevent = threading.Event()
         self.reader = None
 
     def run(self):
@@ -48,6 +49,7 @@ class CanSender(Thread):
             if self.reader:
                 self.stop_reader()
             self.runevent.clear()
+            self.doneevent.set()
             if not self.killevent.isSet():
                 break
 
@@ -64,7 +66,10 @@ class CanSender(Thread):
         self.runevent.set()
 
     def stop(self):
-        self.runevent.clear()
+         if self.runevent.isSet():
+            self.runevent.clear()
+            self.doneevent.clear()
+            self.doneevent.wait()
 
     def exit(self):
         self.runevent.clear()

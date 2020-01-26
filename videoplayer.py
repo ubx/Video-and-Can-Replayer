@@ -123,10 +123,17 @@ class VideoplayerApp(App):
         return self.file
 
     def on_state(self, state):
+        ##print('on_state(state)', state)
         if state == 'play':
             self.cansender.resume(self.video_position2time(self.cur_position, self.syncpoints))
         elif state == 'pause':
             self.cansender.stop()
+
+    def on_touch(self, state, videoplayer):
+        ##print('on_touch(state)', state, videoplayer.state)
+        if videoplayer.state == 'play':
+            self.cansender.stop()
+            self.cansender.resume(self.video_position2time(self.cur_position, self.syncpoints))
 
     def on_position(self, position, videoplayer):
         if self.cur_duration is None and videoplayer.duration > 1.0:
@@ -140,7 +147,7 @@ class VideoplayerApp(App):
 
     def btn_previous(self, videoplayer):
         videoplayer.state = 'pause'
-        vp = self.cur_position
+        vp = self.cur_position - 5.0
         prev, _ = self.inbetween(self.bookmarks, vp)
         ##print('vp', vp, 'prev', prev)
         if prev:

@@ -30,14 +30,14 @@
                 on_state:
                     app.on_state(args[1])
                 on_position:
-                    app.on_position(args[1], video_player)
+                    app.on_position(args[1], self)
                     progress_bar.value=args[1]
                 on_touch_down:
-                    self.state = 'pause'
+                    app.on_touch(args[1], self)
                 on_touch_move:
-                    self.state = 'pause'
+                    app.on_touch(args[1], self)
                 on_touch_up:
-                    self.state = 'pause'
+                    app.on_touch(args[1], self)
 
 
             MapWidget:

@@ -1,6 +1,5 @@
 #:import win kivy.core.window
 
-<Marker@MapMarker>:
 
 <MapWidget@Scatter>:
     size_hint: None,None
@@ -12,6 +11,8 @@
 #            pos: self.pos
 #            size: self.size
 
+<Marker@Scatter>:
+    size_hint: None,None
 
 <MainWindow>:
     BoxLayout:
@@ -23,34 +24,28 @@
             VideoPlayer:
                 id: video_player
                 size_hint: 1.0,1.0
-
                 source: app.get_file()
                 allow_stretch: True
                 state: 'stop'
                 on_state:
-                    app.on_state(args[1])
+                    app.on_state(args[0], args[1])
                 on_position:
                     app.on_position(args[1], self)
                     progress_bar.value=args[1]
-                on_touch_down:
-                    app.on_touch(args[1], self)
-                on_touch_move:
-                    app.on_touch(args[1], self)
-                on_touch_up:
-                    app.on_touch(args[1], self)
-
 
             MapWidget:
                 id: mapwidget
                 AnchorLayout
                     anchor_x: 'center'
-                    anchor_y: 'center'
-                    id: map
-                AnchorLayout
-                    anchor_x: 'center'
-                    anchor_y: 'center'
-                    Marker:
-                        id: marker
+                    anchor_y: 'bottom'
+                    MapView:
+                        id: mapview
+                        size_hint_max: '500dp', '500dp'
+                        size_hint_min: '300dp', '200dp'
+                        zoom: 10
+                        Marker:
+                            id: marker
+                            center: mapview.center
 
 
 
@@ -60,12 +55,12 @@
             height: '48dp'
 
             Button:
-                text: 'Next'
+                text: '>>'
                 on_press:
                     app.btn_next(video_player)
 
             Button:
-                text: 'Previous'
+                text: '<<'
                 on_press:
                     app.btn_previous(video_player)
 

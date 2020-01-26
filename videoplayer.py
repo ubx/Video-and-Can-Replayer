@@ -54,7 +54,7 @@ class MainWindow(BoxLayout):
         self.ids.bookmarks.canvas.clear()
         with self.ids.bookmarks.canvas:
             Color(1, 1, 1)
-            #Rectangle(pos=(0, 50), size=(self.width - 0, 10))
+            # Rectangle(pos=(0, 50), size=(self.width - 0, 10))
         for bm in bookmarks:
             self.draw_bookmarks(bm)
 
@@ -62,7 +62,7 @@ class MainWindow(BoxLayout):
 from kivy.garden.mapview import MapMarker
 
 
-class Marker(MapMarker, Scatter):
+class Marker(Scatter):
     # anchor_x = NumericProperty(0.5)
     # anchor_y = NumericProperty(0.5)
     lat = NumericProperty(0)
@@ -96,18 +96,15 @@ class VideoplayerApp(App):
             self.lat = 47.0
             self.lon = 7.0
             self.th = 0.0
-            from kivy.garden.mapview import MapView
-            self.mapview = MapView(zoom=8, lat=self.lat, lon=self.lon)
-            self.mainwindow.ids.map.add_widget(self.mapview)
 
             def clock_callback(dt):
                 lat2, lon2 = self.position_srv.getLocation()
                 if lat2 is not None and lon2 is not None:
                     self.lat = lat2
                     self.lon = lon2
-                self.mapview.center_on(self.lat, self.lon)
-                self.mainwindow.ids.marker.lat = self.lat
-                self.mainwindow.ids.marker.lon = self.lon
+                self.mainwindow.ids.mapview.center_on(self.lat, self.lon)
+                # self.mainwindow.ids.marker.lat = self.lat
+                # self.mainwindow.ids.marker.lon = self.lon
 
                 th = self.position_srv.getTh()
                 if th:
@@ -122,23 +119,20 @@ class VideoplayerApp(App):
     def get_file(self):
         return self.file
 
-    def on_state(self, state):
-        ##print('on_state(state)', state)
-        if state == 'play':
+    def on_state(self, instance, value):
+        ##print('on_state(state)', instance, value)
+        if value == 'play':
             self.cansender.resume(self.video_position2time(self.cur_position, self.syncpoints))
-        elif state == 'pause':
+        elif value == 'pause':
             self.cansender.stop()
-
-    def on_touch(self, state, videoplayer):
-        ##print('on_touch(state)', state, videoplayer.state)
-        if videoplayer.state == 'play':
-            self.cansender.stop()
-            self.cansender.resume(self.video_position2time(self.cur_position, self.syncpoints))
 
     def on_position(self, position, videoplayer):
         if self.cur_duration is None and videoplayer.duration > 1.0:
             self.cur_duration = videoplayer.duration
             self.root.draw_all_bookmarks(self.bookmarks)
+        if videoplayer.state == 'play' and abs(self.cur_position - position) > 2.0:
+            self.cansender.stop()
+            self.cansender.resume(self.video_position2time(self.cur_position, self.syncpoints))
         self.cur_position = position
 
     def realtime(self, cur_position):
@@ -158,7 +152,7 @@ class VideoplayerApp(App):
             videoplayer.seek(next / videoplayer.duration)
 
     def btn_bookmark(self, videoplayer):
-        if videoplayer.duration > 100.0:  # todo -- workorund ?
+        if videoplayer.duration > 10.0:  # todo -- workorund ?
             self.root.draw_bookmarks(self.cur_position)
             self.bookmarks.append(int(self.cur_position))
             self.bookmarks.sort()

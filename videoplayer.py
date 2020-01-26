@@ -48,13 +48,13 @@ class MainWindow(BoxLayout):
         lpos = base + ((max - base) * (position / self.ids.video_player.duration))
         with self.ids.bookmarks.canvas:
             Color(0, 1, 0)
-            Line(points=(lpos, 60, lpos, 70), width=1.2, )
+            Line(points=(lpos, 60, lpos, 74), width=1.2, )
 
     def draw_all_bookmarks(self, bookmarks):
         self.ids.bookmarks.canvas.clear()
         with self.ids.bookmarks.canvas:
             Color(1, 1, 1)
-            Rectangle(pos=(0, 50), size=(self.width - 0, 10))
+            #Rectangle(pos=(0, 50), size=(self.width - 0, 10))
         for bm in bookmarks:
             self.draw_bookmarks(bm)
 
@@ -147,17 +147,13 @@ class VideoplayerApp(App):
 
     def btn_previous(self, videoplayer):
         videoplayer.state = 'pause'
-        vp = self.cur_position - 5.0
-        prev, _ = self.inbetween(self.bookmarks, vp)
-        ##print('vp', vp, 'prev', prev)
+        prev, _ = self.inbetween(self.bookmarks, self.cur_position - 5.0)
         if prev:
             videoplayer.seek(prev / videoplayer.duration)
 
     def btn_next(self, videoplayer):
         videoplayer.state = 'pause'
-        vp = self.cur_position + 5.0  # todo -- ???
-        _, next = self.inbetween(self.bookmarks, vp)
-        ##print('vp', vp, 'next', next)
+        _, next = self.inbetween(self.bookmarks, self.cur_position + 5.0)
         if next:
             videoplayer.seek(next / videoplayer.duration)
 

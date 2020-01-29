@@ -1,18 +1,7 @@
-#:import win kivy.core.window
-
-
-<MapWidget@Scatter>:
+<MapWidget>:
     size_hint: None,None
-#    #  for debugging:
-#    canvas.before:
-#        Color:
-#            rgba: 1, 1, 1, 1
-#        Rectangle:
-#            pos: self.pos
-#            size: self.size
 
-<Marker@Scatter>:
-    size_hint: None,None
+<Marker>:
 
 <MainWindow>:
     BoxLayout:
@@ -36,16 +25,23 @@
             MapWidget:
                 id: mapwidget
                 AnchorLayout
-                    anchor_x: 'center'
+                    anchor_x: 'right'
                     anchor_y: 'bottom'
                     MapView:
                         id: mapview
                         size_hint_max: '500dp', '500dp'
                         size_hint_min: '300dp', '200dp'
-                        zoom: 10
-                        Marker:
-                            id: marker
+                        zoom: 12
+                    Widget:
+                        Scatter:
                             center: mapview.center
+                            size: 30,30
+                            do_rotation: False
+                            do_translation: False
+                            do_scale: False
+                            rotation: app.heading_angle
+                            Marker:
+                                id: marker
 
 
 
@@ -55,12 +51,12 @@
             height: '48dp'
 
             Button:
-                text: '>>'
+                text: 'Next'
                 on_press:
                     app.btn_next(video_player)
 
             Button:
-                text: '<<'
+                text: 'Prev'
                 on_press:
                     app.btn_previous(video_player)
 
@@ -102,21 +98,6 @@
             orientation: 'vertical'
             size_hint: None, None
             height: '56'
-
-#        BoxLayout:
-#            orientation: 'horizontal'
-#            size_hint_y: None
-#            size_hint_x: 0.3
-#            height: '24'
-#
-#            Label:
-#                text: 'UTC'
-#            Label:
-#                text: '12:33'
-#            Label:
-#                text: 'Pos'
-#            Label:
-#                text: '7.0 / 47.0'
 
 
 <ModalDialog>:

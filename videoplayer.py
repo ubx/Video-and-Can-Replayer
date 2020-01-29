@@ -4,20 +4,19 @@ from datetime import datetime
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.config import Config
-from kivy.graphics import Color, Line, Rectangle
+from kivy.graphics import Color, Line
 from kivy.graphics.svg import Svg
 from kivy.properties import NumericProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.modalview import ModalView
 from kivy.uix.scatter import Scatter
 from kivy.uix.videoplayer import VideoPlayer
+from kivy.uix.widget import Widget
 
 from canreader import CanbusPos
 
 Config.set('graphics', 'width', '1000')
 Config.set('graphics', 'height', '800')
-
-
 ##Config.write()
 
 class ModalDialog(ModalView):
@@ -54,7 +53,6 @@ class MainWindow(BoxLayout):
         self.ids.bookmarks.canvas.clear()
         with self.ids.bookmarks.canvas:
             Color(1, 1, 1)
-            # Rectangle(pos=(0, 50), size=(self.width - 0, 10))
         for bm in bookmarks:
             self.draw_bookmarks(bm)
 
@@ -62,23 +60,20 @@ class MainWindow(BoxLayout):
 from kivy.garden.mapview import MapMarker
 
 
-class Marker(Scatter):
-    # anchor_x = NumericProperty(0.5)
-    # anchor_y = NumericProperty(0.5)
-    lat = NumericProperty(0)
-    lon = NumericProperty(0)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class Marker(Widget):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         with self.canvas:
-            Svg('mapview/icons/glider_symbol.svg')
-
+            svg = Svg('mapview/icons/glider_symbol.svg')
+        self.size = svg.width, svg.height
 
 class MapWidget(Scatter):
     pass
 
 
 class VideoplayerApp(App):
+    heading_angle = NumericProperty(0)
+
     def __init__(self, file, syncpoints, bookmarks, cansender=None, position_srv=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.file = file
@@ -103,24 +98,19 @@ class VideoplayerApp(App):
                     self.lat = lat2
                     self.lon = lon2
                 self.mainwindow.ids.mapview.center_on(self.lat, self.lon)
-                # self.mainwindow.ids.marker.lat = self.lat
-                # self.mainwindow.ids.marker.lon = self.lon
-
                 th = self.position_srv.getTh()
                 if th:
-                    self.mainwindow.ids.marker._set_rotation(th * -1.0)
+                    self.heading_angle = (th * -1.0)
 
             Clock.schedule_interval(clock_callback, 0.25)
         else:
             self.mainwindow.ids.mapwidget.clear_widgets()
-
         return self.mainwindow
 
     def get_file(self):
         return self.file
 
     def on_state(self, instance, value):
-        ##print('on_state(state)', instance, value)
         if value == 'play':
             self.cansender.resume(self.video_position2time(self.cur_position, self.syncpoints))
         elif value == 'pause':

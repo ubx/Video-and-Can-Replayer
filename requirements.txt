@@ -39,4 +39,6 @@ requests == 2.22.0
 # build/lib/mapview/source.py: 7,9,10
 # build/lib/mapview/view.py: 21,23,24
 # movingmap.py: 9
-rmap == 7.5
+### ??rmap == 7.5
+
+ffpyplayer == 4.3.0

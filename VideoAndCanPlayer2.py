@@ -14,7 +14,8 @@ def main():
     global videofilename, canlogfilename
     parser = argparse.ArgumentParser(
         "python VideoAndCanPlayer",
-        description="Replay a video in sync with a can bus logfile.")
+        description="Replay a video in sync with a can bus logfile.",
+        formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument('config', metavar='config-file', type=str,
                         help=helptext.HELP_CONFIG_FILE)

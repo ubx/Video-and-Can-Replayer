@@ -1,4 +1,5 @@
 HELP_CONFIG_FILE = '''Configuration file in json format.
+for example:
 {
    "canbus": {
       "channel": "vcan0",

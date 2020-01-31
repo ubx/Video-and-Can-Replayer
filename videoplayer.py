@@ -17,8 +17,6 @@ from canreader import CanbusPos
 
 Config.set('graphics', 'width', '1000')
 Config.set('graphics', 'height', '800')
-
-
 ##Config.write()
 
 class ModalDialog(ModalView):
@@ -88,6 +86,7 @@ class VideoplayerApp(App):
         self.position_srv = position_srv
 
     def build(self):
+        self.icon = 'app.ico'
         self.mainwindow = MainWindow()
 
         if self.position_srv:

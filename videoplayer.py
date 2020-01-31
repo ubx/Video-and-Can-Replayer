@@ -162,7 +162,6 @@ class VideoplayerApp(App):
         fps_list = list(syncpoints.keys())
         prev, _ = self.inbetween(fps_list, vpos)
         fsp = next(iter(syncpoints)) if prev is None else prev
-        print(fsp)
         t1 = syncpoints[fsp]
         utc_offset = datetime.fromtimestamp(t1) - datetime.utcfromtimestamp(t1)
         return (t1 - (fsp - vpos)) - utc_offset.seconds

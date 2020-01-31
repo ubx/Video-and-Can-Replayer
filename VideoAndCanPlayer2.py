@@ -42,9 +42,9 @@ def main():
     bookmarks = config['video']['bookmarks']
     bookmarks.sort()
 
-    syncpoints = config['video']['syncpoints']
+    syncpoints = {int(k):v for k,v in config['video']['syncpoints'].items()}
     if len(syncpoints) == 0:
-        print("No synpoints for video, exit")
+        print("No syncpoints for video")
 
     cansender = CanSender(canlogfilename, config['canbus']['channel'], config['canbus']['interface'],
                           with_internal_bus=True, name='CanSender')

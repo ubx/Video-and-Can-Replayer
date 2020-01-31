@@ -17,6 +17,8 @@ from canreader import CanbusPos
 
 Config.set('graphics', 'width', '1000')
 Config.set('graphics', 'height', '800')
+
+
 ##Config.write()
 
 class ModalDialog(ModalView):
@@ -36,7 +38,7 @@ class ModalDialog(ModalView):
         print('ts', self.ts, 'cur_position', self.videoplayer.cur_position)
         self.videoplayer.bookmarks.append(int(self.ts))
         self.videoplayer.bookmarks.sort()
-        self.videoplayer.syncpoints[f'{int(round(self.videoplayer.cur_position))}'] = self.ts
+        self.videoplayer.syncpoints[int(round(self.videoplayer.cur_position))] = self.ts
 
 
 class MainWindow(BoxLayout):
@@ -66,6 +68,7 @@ class Marker(Widget):
         with self.canvas:
             svg = Svg('mapview/icons/glider_symbol.svg')
         self.size = svg.width, svg.height
+
 
 class MapWidget(Scatter):
     pass
@@ -156,10 +159,13 @@ class VideoplayerApp(App):
         dialog.open()
 
     def video_position2time(self, vpos, syncpoints):
-        fsp = next(iter(syncpoints))  # take first syncpoint !
+        fps_list = list(syncpoints.keys())
+        prev, _ = self.inbetween(fps_list, vpos)
+        fsp = next(iter(syncpoints)) if prev is None else prev
+        print(fsp)
         t1 = syncpoints[fsp]
         utc_offset = datetime.fromtimestamp(t1) - datetime.utcfromtimestamp(t1)
-        return (t1 - (int(fsp) - vpos)) - utc_offset.seconds
+        return (t1 - (fsp - vpos)) - utc_offset.seconds
 
     def inbetween(self, list, val):
         val = int(round(val))

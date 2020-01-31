@@ -3,11 +3,9 @@ import argparse
 
 import helptext
 import json
-import sys
 
 from canreader import CanbusPos
 from cansender import CanSender
-from videoplayer import VideoplayerApp
 
 
 def main():
@@ -23,13 +21,7 @@ def main():
     parser.add_argument('--map', default=False, action='store_true', required=False,
                         help='display a moving map')
 
-    # print help message when no arguments were given
-    if len(sys.argv) < 1:
-        parser.print_help(sys.stderr)
-        import errno
-        raise SystemExit(errno.EINVAL)
     results = parser.parse_args()
-
     with open(results.config, 'r') as read_file:
         config = json.load(read_file)
 
@@ -64,6 +56,7 @@ def main():
     else:
         position_srv = None
 
+    from videoplayer import VideoplayerApp
     VideoplayerApp(videofilename, syncpoints, bookmarks, cansender, position_srv).run()
     cansender.exit()
 

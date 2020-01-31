@@ -144,6 +144,14 @@ class VideoplayerApp(App):
         if next:
             videoplayer.seek(next / videoplayer.duration)
 
+    def btn_minus_10s(self, videoplayer):
+        videoplayer.state = 'pause'
+        videoplayer.seek((self.cur_position - 10.0) / videoplayer.duration)
+
+    def btn_plus_10s(self, videoplayer):
+        videoplayer.state = 'pause'
+        videoplayer.seek((self.cur_position + 10.0) / videoplayer.duration)
+
     def btn_bookmark(self, videoplayer):
         if videoplayer.duration > 10.0:  # todo -- workorund ?
             self.root.draw_bookmarks(self.cur_position)

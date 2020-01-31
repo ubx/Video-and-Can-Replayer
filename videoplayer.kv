@@ -51,14 +51,24 @@
             height: '48dp'
 
             Button:
+                text: 'Prev'
+                on_press:
+                    app.btn_previous(video_player)
+
+            Button:
                 text: 'Next'
                 on_press:
                     app.btn_next(video_player)
 
             Button:
-                text: 'Prev'
+                text: '-10s'
                 on_press:
-                    app.btn_previous(video_player)
+                    app.btn_minus_10s(video_player)
+
+            Button:
+                text: '+10s'
+                on_press:
+                    app.btn_plus_10s(video_player)
 
             Button:
                 text: 'Bookmark'

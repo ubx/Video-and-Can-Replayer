@@ -1,5 +1,6 @@
 import time
 from datetime import datetime
+from typing import Optional
 
 from kivy.app import App
 from kivy.clock import Clock
@@ -17,6 +18,8 @@ from canreader import CanbusPos
 
 Config.set('graphics', 'width', '1000')
 Config.set('graphics', 'height', '800')
+
+
 ##Config.write()
 
 class ModalDialog(ModalView):
@@ -132,24 +135,20 @@ class VideoplayerApp(App):
         return time.strftime('%H:%M:%S', time.localtime(seconds))
 
     def btn_previous(self, videoplayer):
-        videoplayer.state = 'pause'
         prev, _ = self.inbetween(self.bookmarks, self.cur_position - 5.0)
         if prev:
             videoplayer.seek(prev / videoplayer.duration)
+        videoplayer.state = 'pause'
 
     def btn_next(self, videoplayer):
-        videoplayer.state = 'pause'
         _, next = self.inbetween(self.bookmarks, self.cur_position + 5.0)
         if next:
             videoplayer.seek(next / videoplayer.duration)
-
-    def btn_minus_10s(self, videoplayer):
         videoplayer.state = 'pause'
-        videoplayer.seek((self.cur_position - 10.0) / videoplayer.duration)
 
-    def btn_plus_10s(self, videoplayer):
+    def btn_move(self, videoplayer, delta):
+        videoplayer.seek((self.cur_position + delta) / videoplayer.duration)
         videoplayer.state = 'pause'
-        videoplayer.seek((self.cur_position + 10.0) / videoplayer.duration)
 
     def btn_bookmark(self, videoplayer):
         if videoplayer.duration > 10.0:  # todo -- workorund ?
@@ -167,9 +166,18 @@ class VideoplayerApp(App):
 
     def video_position2time(self, vpos, syncpoints):
         fps_list = list(syncpoints.keys())
-        prev, _ = self.inbetween(fps_list, vpos)
-        fsp = next(iter(syncpoints)) if prev is None else prev
+        p, n = self.inbetween(fps_list, vpos)
+        if p is not None and n is not None:
+            if vpos - p < n - vpos:
+                fsp = p
+            else:
+                fsp = n
+        elif p is not None:
+            fsp = p
+        else:
+            fsp = n
         t1 = syncpoints[fsp]
+        print(fsp)
         utc_offset = datetime.fromtimestamp(t1) - datetime.utcfromtimestamp(t1)
         return (t1 - (fsp - vpos)) - utc_offset.seconds
 

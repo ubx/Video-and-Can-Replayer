@@ -6,7 +6,7 @@ from kivy.clock import Clock
 from kivy.config import Config
 from kivy.graphics import Color, Line
 from kivy.graphics.svg import Svg
-from kivy.properties import NumericProperty
+from kivy.properties import NumericProperty, StringProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.modalview import ModalView
 from kivy.uix.scatter import Scatter
@@ -35,7 +35,6 @@ class ModalDialog(ModalView):
             return None
 
     def set_syncpoint(self):
-        ##print('ts', self.ts, 'cur_position', self.videoplayer.cur_position)
         self.videoplayer.syncpoints[int(round(self.videoplayer.cur_position))] = self.ts
 
 
@@ -74,6 +73,7 @@ class MapWidget(Scatter):
 
 class VideoplayerApp(App):
     heading_angle = NumericProperty(0)
+    utc_str = StringProperty('--:--:--')
 
     def __init__(self, file, syncpoints, bookmarks, cansender=None, position_srv=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -95,6 +95,9 @@ class VideoplayerApp(App):
             self.th = 0.0
 
             def clock_callback(dt):
+                utc = self.position_srv.getUtc()
+                if utc:
+                    self.utc_str = time.strftime('%H:%M:%S', time.localtime(utc))
                 lat2, lon2 = self.position_srv.getLocation()
                 if lat2 is not None and lon2 is not None:
                     self.lat = lat2

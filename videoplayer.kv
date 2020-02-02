@@ -42,6 +42,17 @@
                             rotation: app.heading_angle
                             Marker:
                                 id: marker
+                    Widget:
+                        Scatter:
+                            pos: mapview.pos
+                            do_rotation: False
+                            do_translation: False
+                            do_scale: False
+                            Label:
+                                size: self.texture_size
+                                color: 0,0,0,1
+                                text: app.utc_str
+
 
 
 

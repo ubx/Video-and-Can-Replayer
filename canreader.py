@@ -1,6 +1,7 @@
 import struct
 import threading
 from datetime import datetime
+import datetime
 
 import can
 from can import MessageSync
@@ -79,6 +80,7 @@ class CanbusPos(threading.Thread):
     def __init__(self, channel, bustype, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.bus = can.interface.Bus(channel=channel, bustype=bustype)
+        self.utc = None
         self.lat = None
         self.lon = None
         self.th = None
@@ -87,7 +89,15 @@ class CanbusPos(threading.Thread):
     def run(self):
         try:
             for message in self.bus:
-                if message.arbitration_id == 1036:
+                if message.arbitration_id == 1200:  # UTC time
+                    if self.utc_date_data:
+                        ud = struct.unpack('4b', self.utc_date_data[4:])
+                        ut = struct.unpack('4b', message.data[4:])
+                        self.utc = datetime.datetime((ud[2] * 100) + ud[3], ud[1], ud[0], ut[0], ut[1], ut[2],
+                                                     ut[3]).timestamp()
+                elif message.arbitration_id == 1206:  # UTC date
+                    self.utc_date_data = message.data
+                elif message.arbitration_id == 1036:
                     self.lat = getDoubleL(message.data)
                 elif message.arbitration_id == 1037:
                     self.lon = getDoubleL(message.data)
@@ -101,8 +111,8 @@ class CanbusPos(threading.Thread):
                         print('TT={:3.1f} TH={:3.1f} Diff={:3.1f} Wind_dir={:3.1f}'.format(self.tt, self.th,
                                                                                            self.tt - self.th,
                                                                                            self.wind_direction))
-        except:
-            pass
+        except Exception as e:
+            print(e)
 
     def exit(self):
         self.bus.shutdown()
@@ -112,3 +122,6 @@ class CanbusPos(threading.Thread):
 
     def getTh(self):
         return self.th
+
+    def getUtc(self):
+        return self.utc

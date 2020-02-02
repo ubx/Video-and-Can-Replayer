@@ -4,10 +4,10 @@
       "interface": "socketcan"
    },
    "canlog": {
-      "date": "2019-10-21",
+      "date": "2019-09-21",
       "filename": "data/candump-2019-09-21_110938-gps.db"
    },
-   "description": "Flug vom 2019-10-21",
+   "description": "Flug vom 2019-09-21",
    "video": {
       "bookmarks": [
          120,
@@ -19,18 +19,12 @@
          2373,
          3600,
          3606,
-         7200,
-         7602,
-         1571657400,
-         1571657460,
-         1571658660,
-         1571661000,
-         1571661420
+         7200
       ],
       "filename": "data/total-Aug-audio-x264.mp4",
       "syncpoints": {
          "496": 1569062318.0,
-         "7183": 1571661000.0
+         "5682": 1569067500.0
       }
    }
 }

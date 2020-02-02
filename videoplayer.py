@@ -1,6 +1,5 @@
 import time
 from datetime import datetime
-from typing import Optional
 
 from kivy.app import App
 from kivy.clock import Clock
@@ -36,9 +35,7 @@ class ModalDialog(ModalView):
             return None
 
     def set_syncpoint(self):
-        print('ts', self.ts, 'cur_position', self.videoplayer.cur_position)
-        self.videoplayer.bookmarks.append(int(self.ts))
-        self.videoplayer.bookmarks.sort()
+        ##print('ts', self.ts, 'cur_position', self.videoplayer.cur_position)
         self.videoplayer.syncpoints[int(round(self.videoplayer.cur_position))] = self.ts
 
 
@@ -165,21 +162,20 @@ class VideoplayerApp(App):
         dialog.open()
 
     def video_position2time(self, vpos, syncpoints):
-        fps_list = list(syncpoints.keys())
-        p, n = self.inbetween(fps_list, vpos)
+        p, n = self.inbetween(list(syncpoints.keys()), vpos)
         if p is not None and n is not None:
-            if vpos - p < n - vpos:
-                fsp = p
-            else:
-                fsp = n
+            c = (syncpoints[n] - syncpoints[p]) / (n - p)  # todo -- optimize this
+            p1 = p
         elif p is not None:
-            fsp = p
+            c = 1.0
+            p1 = p
         else:
-            fsp = n
-        t1 = syncpoints[fsp]
-        print(fsp)
+            c = 1.0
+            p1 = next(iter(syncpoints))
+        t1 = syncpoints[p1]
+        ##print(p1, t1, c)
         utc_offset = datetime.fromtimestamp(t1) - datetime.utcfromtimestamp(t1)
-        return (t1 - (fsp - vpos)) - utc_offset.seconds
+        return (t1 - ((p1 - vpos) * c)) - utc_offset.seconds
 
     def inbetween(self, list, val):
         val = int(round(val))

@@ -12,11 +12,17 @@
 * cd Video-and-Can-Replayer
 * get all files in data directory (not on github)
 * verify config2.json config file
-* install python 3.7 (https://www.python.org/downloads/)
 * install Anaconda (https://www.anaconda.com/distribution)
 * conda install kivy -c conda-forge
 * pip install -r requirements.txt 
 
 # Run
 * python VideoAndCanPlayer2.py config2.json --map
+
+# Create a Windows exe (experimental)
+* pip uninstall pyinstaller
+* pip install https://github.com/pyinstaller/pyinstaller/archive/develop.zip
+* pyinstaller VideoAndCanPlayer2.spec
+### Run it on Windows:
+* dist\VideoAndCanPlayer2.exe config2.json
   

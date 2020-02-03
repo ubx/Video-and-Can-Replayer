@@ -1,7 +1,7 @@
 <MapWidget>:
     size_hint: None,None
 
-<Marker>:
+<Glider>:
 
 <MainWindow>:
     BoxLayout:
@@ -40,8 +40,7 @@
                             do_translation: False
                             do_scale: False
                             rotation: app.heading_angle
-                            Marker:
-                                id: marker
+                            Glider:
                     Widget:
                         Scatter:
                             pos: mapview.pos

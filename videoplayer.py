@@ -59,7 +59,7 @@ class MainWindow(BoxLayout):
 from kivy.garden.mapview import MapMarker
 
 
-class Marker(Widget):
+class Glider(Widget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         with self.canvas:

@@ -166,10 +166,13 @@ class VideoplayerApp(App):
 
     def video_position2time(self, vpos, syncpoints):
         p, n = self.inbetween(list(syncpoints.keys()), vpos)
-        if p is not None and n is not None:
-            c = (syncpoints[n] - syncpoints[p]) / (n - p)  # todo -- optimize this
+        if p and n:
+            c = (syncpoints[n] - syncpoints[p]) / (n - p)
+            # todo -- optimize this,
+            #   see: http://python.omics.wiki/data-structures/dictionary/multiple-keys
+            #        https://stackoverflow.com/questions/39358092/range-as-dictionary-key-in-python
             p1 = p
-        elif p is not None:
+        elif p:
             c = 1.0
             p1 = p
         else:
@@ -183,7 +186,7 @@ class VideoplayerApp(App):
     def inbetween(self, list, val):
         val = int(round(val))
         prev, next = None, None
-        if list is not None:
+        if list:
             if val < list[0]: next = list[0]
             if val > list[-1]: prev = list[-1]
             if len(list) > 1:

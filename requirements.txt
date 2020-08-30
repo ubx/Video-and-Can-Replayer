@@ -21,13 +21,13 @@ django_helptext == 0.3
 # logfile2sqldb.py: 15
 # player2.py: 9
 # sqlite2.py: 10
-python_can == 3.3.2
+python_can== 3.3.3
 
 # build/lib/mapview/downloader.py: 10
-requests == 2.22.0
+requests== 2.24.0
 
 # setup.py: 1
-setuptools == 45.1.0
+setuptools== 49.6.0
 
 ## manual  added.
-ffpyplayer == 4.3.0
+ffpyplayer== 4.3.1

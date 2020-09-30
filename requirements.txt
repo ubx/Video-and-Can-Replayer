@@ -10,10 +10,9 @@
 # build/lib/mapview/view.py: 16,17,18,19,513
 # movingmap.py: 3,4,5,6,33
 # videoplayer.py: 7,8,9,10,11,12,13,14,60
-Kivy == 1.11.1
+Kivy~=1.11.1
 
 # VideoAndCanPlayer2.py: 4
-django_helptext == 0.3
 
 # canlogreader.py: 5
 # canreader.py: 5,6
@@ -21,13 +20,20 @@ django_helptext == 0.3
 # logfile2sqldb.py: 15
 # player2.py: 9
 # sqlite2.py: 10
-python_can== 3.3.3
 
 # build/lib/mapview/downloader.py: 10
-requests== 2.24.0
+requests~=2.24.0
 
 # setup.py: 1
-setuptools== 49.6.0
+setuptools~=49.6.0
 
 ## manual  added.
-ffpyplayer== 4.3.1
+
+matplotlib~=3.1.3
+numpy~=1.18.5
+Pillow~=7.0.0
+ephem~=3.7.7.1
+PySimpleGUI~=4.15.2
+django-helptext~=0.3
+opencv-python~=4.4.0.44
+python-can~=3.3.3

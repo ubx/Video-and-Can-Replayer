@@ -38,7 +38,7 @@ class CanSender(Thread):
             try:
                 for message in self.in_sync:
                     if self.bus:
-                        self.bus.send(message)
+                        self.bus.send(message, timeout=0.1)
                     if self.bus_internal:
                         self.bus_internal.send(message)
                     if not self.runevent.isSet():

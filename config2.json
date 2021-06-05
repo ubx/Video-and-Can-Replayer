@@ -1,24 +1,28 @@
 {
    "canbus": {
-      "channel": "vcan0",
+      "channel": "can0",
       "interface": "socketcan"
    },
    "canlog": {
       "date": "2019-09-21",
       "filename": "data/candump-2019-09-21_110938-gps.db"
    },
-   "description": "Flug vom 2019-09-21",
+   "description": "Flug vom 2019-09-21 Vario el. kompensiert",
    "video": {
       "bookmarks": [
+         0,
+         0,
+         2,
          120,
+         288,
          408,
          432,
-         597,
          600,
+         1185,
          1800,
+         1885,
          2373,
          3600,
-         3606,
          7200
       ],
       "filename": "data/total-Aug-audio-x264.mp4",

@@ -1,0 +1,18 @@
+{
+  "canbus": {
+    "channel": "vcan0",
+    "interface": "socketcan"
+  },
+  "canlog": {
+    "date": "2015-08-24",
+    "filename": "data/nmea2can.db"
+  },
+  "description": "Flug vom 2015-08-24",
+  "video": {
+    "bookmarks": [],
+    "filename": "data/nmea2can.mp4",
+    "syncpoints": {
+      "10": 1588239336.0
+    }
+  }
+}

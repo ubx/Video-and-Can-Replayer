@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 import argparse
-
-import helptext
 import json
 
+import helptext
 from canreader import CanbusPos
 from cansender import CanSender
 
@@ -42,12 +41,17 @@ def main():
     bookmarks = config['video']['bookmarks']
     bookmarks.sort()
 
-    syncpoints = {int(k):v for k,v in config['video']['syncpoints'].items()}
+    syncpoints = {int(k): v for k, v in config['video']['syncpoints'].items()}
     if len(syncpoints) == 0:
         print("No syncpoints for video")
 
+    try:
+        filter_out = config['canlog']['filter_out']
+    except:
+        filter_out = []
+
     cansender = CanSender(canlogfilename, config['canbus']['channel'], config['canbus']['interface'],
-                          with_internal_bus=True, name='CanSender')
+                          with_internal_bus=True, filter_out=filter_out, name='CanSender')
     cansender.start()
 
     if results.map:

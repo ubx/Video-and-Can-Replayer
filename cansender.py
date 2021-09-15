@@ -8,11 +8,13 @@ from player2 import LogReader2
 
 
 class CanSender(Thread):
-    def __init__(self, infile, channel, interface, start_time=0.0, with_internal_bus=False, *args, **kwargs):
+    def __init__(self, infile, channel, interface, start_time=0.0, with_internal_bus=False, filter_out=[], *args,
+                 **kwargs):
         super().__init__(*args, **kwargs)
         self.daemon = True
         self.infile = infile
         self.start_time = start_time
+        self.filter_out = filter_out
         try:
             self.config = {'single_handle': True}
             self.config['interface'] = interface
@@ -37,12 +39,15 @@ class CanSender(Thread):
             self.in_sync = MessageSync(self.reader, timestamps=True)
             try:
                 for message in self.in_sync:
-                    if self.bus:
-                        self.bus.send(message, timeout=0.1)
-                    if self.bus_internal:
-                        self.bus_internal.send(message)
-                    if not self.runevent.isSet():
-                        break
+                    if message.arbitration_id in self.filter_out:
+                        print('Filter out can id {:d})'.format(message.arbitration_id))
+                    else:
+                        if self.bus:
+                            self.bus.send(message, timeout=0.1)
+                        if self.bus_internal:
+                            self.bus_internal.send(message)
+                        if not self.runevent.isSet():
+                            break
             finally:
                 pass
 

@@ -1,14 +1,17 @@
 #!/usr/bin/env python
+# coding: utf-8
 
 """
-Import a  can-bus logfile into sqlite3 db.
+Import a can-bus logfile into sqlite3 db.
+Note: don't forget to add an index to ts field:
+   sqlite3 -line log-data.db 'CREATE unique INDEX ts_idx ON messages (ts);'
 """
 
 from __future__ import absolute_import, print_function
 
+import argparse
 import sqlite3
 import sys
-import argparse
 from datetime import datetime
 
 import can
@@ -29,7 +32,7 @@ def main():
                         help='The file to read. For supported types see can.LogReader.')
 
     parser.add_argument('outfile', metavar='output-file', type=str,
-                        help='The file to write sqlite3 db.')
+                        help='The file to write. For supported types see can.LogReader.')
 
     parser.add_argument("-v", action="count", dest="verbosity",
                         help='''How much information do you want to see at the command line?
@@ -49,7 +52,7 @@ def main():
     can.set_logging_level(logging_level_name)
 
     reader = LogReader(results.infile)
-    in_nosync = MessageSync(reader, timestamps=False)
+    in_nosync = MessageSync(reader, timestamps=False, skip=3600)
     print('Can LogReader (Started on {})'.format(datetime.now()))
 
     conn = sqlite3.connect(results.outfile)

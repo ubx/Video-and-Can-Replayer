@@ -21,7 +21,7 @@ Config.set('graphics', 'height', '800')
 
 ##Config.write()
 
-class ModalDialog(ModalView):
+class SyncpointDialog(ModalView):
     def __init__(self, videoplayer, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.videoplayer: VideoPlayer = videoplayer
@@ -54,9 +54,6 @@ class MainWindow(BoxLayout):
             Color(1, 1, 1)
         for bm in bookmarks:
             self.draw_bookmarks(bm)
-
-
-from kivy.garden.mapview import MapMarker
 
 
 class Glider(Widget):
@@ -161,7 +158,7 @@ class VideoplayerApp(App):
 
     def btn_syncpoint(self, videoplayer):
         videoplayer.state = 'pause'
-        dialog = ModalDialog(self)
+        dialog = SyncpointDialog(self)
         dialog.open()
 
     def video_position2time(self, vpos, syncpoints):

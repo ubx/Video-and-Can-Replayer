@@ -55,6 +55,7 @@ class MainWindow(BoxLayout):
         for bm in bookmarks:
             self.draw_bookmarks(bm)
 
+from kivy.garden.mapview import MapMarker
 
 class Glider(Widget):
     def __init__(self, **kwargs):

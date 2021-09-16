@@ -1,7 +1,7 @@
+import datetime
 import struct
 import threading
 from datetime import datetime
-import datetime
 
 import can
 from can import MessageSync
@@ -107,10 +107,10 @@ class CanbusPos(threading.Thread):
                     self.tt = getFloat(message.data)
                 elif message.arbitration_id == 334:
                     self.wind_direction = toDeg(getFloat(message.data))
-                    if self.tt and self.th and self.wind_direction:
-                        print('TT={:3.1f} TH={:3.1f} Diff={:3.1f} Wind_dir={:3.1f}'.format(self.tt, self.th,
-                                                                                           self.tt - self.th,
-                                                                                           self.wind_direction))
+                    # if self.tt and self.th and self.wind_direction:
+                    #     print('TT={:3.1f} TH={:3.1f} Diff={:3.1f} Wind_dir={:3.1f}'.format(self.tt, self.th,
+                    #                                                                        self.tt - self.th,
+                    #                                                                        self.wind_direction))
         except Exception as e:
             print(e)
 

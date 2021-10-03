@@ -1,8 +1,6 @@
 import datetime
 import struct
 import threading
-from datetime import datetime
-
 import can
 from can import MessageSync
 

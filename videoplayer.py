@@ -21,7 +21,7 @@ Config.set('graphics', 'height', '800')
 
 ##Config.write()
 
-class SyncpointDialog(ModalView):
+class ModalDialog(ModalView):
     def __init__(self, videoplayer, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.videoplayer: VideoPlayer = videoplayer
@@ -159,7 +159,7 @@ class VideoplayerApp(App):
 
     def btn_syncpoint(self, videoplayer):
         videoplayer.state = 'pause'
-        dialog = SyncpointDialog(self)
+        dialog = ModalDialog(self)
         dialog.open()
 
     def video_position2time(self, vpos, syncpoints):

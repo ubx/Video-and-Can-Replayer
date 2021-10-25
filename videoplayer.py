@@ -1,4 +1,9 @@
 import time
+
+from kivy.uix.videoplayer import VideoPlayerAnnotation
+
+import videoPlayer2
+
 from datetime import datetime
 
 from kivy.app import App
@@ -10,7 +15,6 @@ from kivy.properties import NumericProperty, StringProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.modalview import ModalView
 from kivy.uix.scatter import Scatter
-from kivy.uix.videoplayer import VideoPlayer
 from kivy.uix.widget import Widget
 
 from canreader import CanbusPos
@@ -24,7 +28,7 @@ Config.set('graphics', 'height', '800')
 class ModalDialog(ModalView):
     def __init__(self, videoplayer, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.videoplayer: VideoPlayer = videoplayer
+        self.videoplayer: VideoPlayer2 = videoplayer
         self.ts = None
 
     def checkTime(self, sp):
@@ -73,11 +77,12 @@ class VideoplayerApp(App):
     heading_angle = NumericProperty(0)
     utc_str = StringProperty('--:--:--')
 
-    def __init__(self, file, syncpoints, bookmarks, cansender=None, position_srv=None, *args, **kwargs):
+    def __init__(self, file, syncpoints, bookmarks, decription, cansender=None, position_srv=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.file = file
         self.syncpoints = syncpoints
         self.bookmarks = bookmarks
+        self.description = decription
         self.cansender = cansender
         self.cur_position = 0
         self.cur_duration = None
@@ -110,7 +115,10 @@ class VideoplayerApp(App):
             self.mainwindow.ids.mapwidget.clear_widgets()
         return self.mainwindow
 
-    def get_file(self):
+    def get_file(self, videoplayer):
+        ann = {'start': 0, 'duration': 20,
+               'text': self.description}
+        videoplayer._annotations_labels.append(VideoPlayerAnnotation(annotation=ann))
         return self.file
 
     def on_state(self, instance, value):

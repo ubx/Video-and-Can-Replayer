@@ -10,10 +10,10 @@
             anchor_x: 'right'
             anchor_y: 'bottom'
 
-            VideoPlayer:
+            VideoPlayer2:
                 id: video_player
                 size_hint: 1.0,1.0
-                source: app.get_file()
+                source: app.get_file(video_player)
                 allow_stretch: True
                 state: 'stop'
                 on_state:

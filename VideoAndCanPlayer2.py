@@ -50,6 +50,11 @@ def main():
     except:
         filter_out = []
 
+    try:
+        decription = config['description']
+    except:
+        decription = videofilename
+
     cansender = CanSender(canlogfilename, config['canbus']['channel'], config['canbus']['interface'],
                           with_internal_bus=True, filter_out=filter_out, name='CanSender')
     cansender.start()
@@ -61,7 +66,7 @@ def main():
         position_srv = None
 
     from videoplayer import VideoplayerApp
-    VideoplayerApp(videofilename, syncpoints, bookmarks, cansender, position_srv).run()
+    VideoplayerApp(videofilename, syncpoints, bookmarks, decription, cansender, position_srv).run()
     cansender.exit()
 
     if position_srv:

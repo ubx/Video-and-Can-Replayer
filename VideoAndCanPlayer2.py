@@ -39,7 +39,7 @@ def main():
             return
 
     bookmarks = config['video']['bookmarks']
-    bookmarks.sort()
+    bookmarks.sort(key=lambda x: x[0])
 
     syncpoints = {int(k): v for k, v in config['video']['syncpoints'].items()}
     if len(syncpoints) == 0:

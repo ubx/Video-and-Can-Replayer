@@ -120,7 +120,7 @@
             height: '56'
 
 
-<ModalDialog>:
+<SyncpointDialog>:
     size_hint: None, None
     size: 400, 180
 
@@ -146,6 +146,36 @@
                 disabled: True
                 on_release:
                     root.set_syncpoint()
+                    root.dismiss()
+            Button:
+                text: "Cancel"
+                on_release:
+                    root.dismiss()
+
+<BookmarkDialog>:
+    size_hint: None, None
+    size: 400, 120
+
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: "Enter description"
+        Label:
+            id: label
+        TextInput:
+            multiline: False
+            hint_text:'Enter bookmark description'
+            on_text:
+                root.description = args[1]
+
+        BoxLayout:
+            orientation: 'horizontal'
+            Button:
+                id: btn_bookmark
+                text: "OK"
+                disabled: False
+                on_release:
+                    root.set_bookmark()
                     root.dismiss()
             Button:
                 text: "Cancel"

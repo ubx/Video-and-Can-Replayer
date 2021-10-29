@@ -2,7 +2,7 @@ import time
 
 from kivy.uix.videoplayer import VideoPlayerAnnotation
 
-import videoPlayer2
+from videoPlayer2 import VideoPlayer2
 
 from datetime import datetime
 
@@ -25,7 +25,7 @@ Config.set('graphics', 'height', '800')
 
 ##Config.write()
 
-class ModalDialog(ModalView):
+class SyncpointDialog(ModalView):
     def __init__(self, videoplayer, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.videoplayer: VideoPlayer2 = videoplayer
@@ -42,9 +42,24 @@ class ModalDialog(ModalView):
         self.videoplayer.syncpoints[int(round(self.videoplayer.cur_position))] = self.ts
 
 
+class BookmarkDialog(ModalView):
+    def __init__(self, videoplayer, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.videoplayer: VideoPlayer2 = videoplayer
+        self.description = None
+
+    def set_bookmark(self):
+        cur_position = int(self.videoplayer.cur_position)
+        self.videoplayer.mainwindow.draw_bookmark(cur_position)
+        self.videoplayer.bookmarks.append([int(cur_position), self.description])
+        self.videoplayer.bookmarks.sort(key=lambda x: x[0])
+        ann = {'start': cur_position, 'duration': 10, 'text': self.description}
+        self.videoplayer.mainwindow.ids.video_player.add_annotation(ann)
+
+
 class MainWindow(BoxLayout):
 
-    def draw_bookmarks(self, position):
+    def draw_bookmark(self, position):
         base = 0
         max = self.width - 0
         lpos = base + ((max - base) * (position / self.ids.video_player.duration))
@@ -57,9 +72,11 @@ class MainWindow(BoxLayout):
         with self.ids.bookmarks.canvas:
             Color(1, 1, 1)
         for bm in bookmarks:
-            self.draw_bookmarks(bm)
+            self.draw_bookmark(bm[0])
+
 
 from kivy.garden.mapview import MapMarker
+
 
 class Glider(Widget):
     def __init__(self, **kwargs):
@@ -116,9 +133,11 @@ class VideoplayerApp(App):
         return self.mainwindow
 
     def get_file(self, videoplayer):
-        ann = {'start': 0, 'duration': 20,
-               'text': self.description}
-        videoplayer._annotations_labels.append(VideoPlayerAnnotation(annotation=ann))
+        ann = {'start': 0, 'duration': 20, 'text': self.description}
+        videoplayer.add_annotation(ann)
+        for bm in self.bookmarks:
+            ann = {'start': bm[0] - 5, 'duration': 10, 'text': bm[1]}
+            videoplayer.add_annotation(ann)
         return self.file
 
     def on_state(self, instance, value):
@@ -141,13 +160,13 @@ class VideoplayerApp(App):
         return time.strftime('%H:%M:%S', time.localtime(seconds))
 
     def btn_previous(self, videoplayer):
-        prev, _ = self.inbetween(self.bookmarks, self.cur_position - 5.0)
+        prev, _ = self.inbetween_bm(self.bookmarks, self.cur_position - 5.0)
         if prev:
             videoplayer.seek(prev / videoplayer.duration)
         videoplayer.state = 'pause'
 
     def btn_next(self, videoplayer):
-        _, next = self.inbetween(self.bookmarks, self.cur_position + 5.0)
+        _, next = self.inbetween_bm(self.bookmarks, self.cur_position + 5.0)
         if next:
             videoplayer.seek(next / videoplayer.duration)
         videoplayer.state = 'pause'
@@ -158,20 +177,20 @@ class VideoplayerApp(App):
 
     def btn_bookmark(self, videoplayer):
         if videoplayer.duration > 10.0:  # todo -- workorund ?
-            self.root.draw_bookmarks(self.cur_position)
-            self.bookmarks.append(int(self.cur_position))
-            self.bookmarks.sort()
+            videoplayer.state = 'pause'
+            dialog = BookmarkDialog(self)
+            dialog.open()
+
+    def btn_syncpoint(self, videoplayer):
+        videoplayer.state = 'pause'
+        dialog = SyncpointDialog(self)
+        dialog.open()
 
     def on_width(self):
         self.root.draw_all_bookmarks(self.bookmarks)
 
-    def btn_syncpoint(self, videoplayer):
-        videoplayer.state = 'pause'
-        dialog = ModalDialog(self)
-        dialog.open()
-
     def video_position2time(self, vpos, syncpoints):
-        p, n = self.inbetween(list(syncpoints.keys()), vpos)
+        p, n = self.inbetween_sp(list(syncpoints.keys()), vpos)
         if p and n:
             c = (syncpoints[n] - syncpoints[p]) / (n - p)
             # todo -- optimize this,
@@ -189,17 +208,32 @@ class VideoplayerApp(App):
         utc_offset = datetime.fromtimestamp(t1) - datetime.utcfromtimestamp(t1)
         return (t1 - ((p1 - vpos) * c)) - utc_offset.seconds
 
-    def inbetween(self, list, val):
+    ## todo -- avoid duplicated code !!
+    def inbetween_sp(self, syncpoints, val):
         val = int(round(val))
         prev, next = None, None
-        if list:
-            if val < list[0]: next = list[0]
-            if val > list[-1]: prev = list[-1]
-            if len(list) > 1:
-                for i in range(0, len(list) - 1):
-                    if val in range(list[i], list[i + 1]):
-                        prev = list[i]
-                        next = list[i + 1]
+        if syncpoints:
+            if val < syncpoints[0]: next = syncpoints[0]
+            if val > syncpoints[-1]: prev = syncpoints[-1]
+            if len(syncpoints) > 1:
+                for i in range(0, len(syncpoints) - 1):
+                    if val in range(syncpoints[i], syncpoints[i + 1]):
+                        prev = syncpoints[i]
+                        next = syncpoints[i + 1]
+                        break
+        return prev if prev is None else float(prev), next if next is None else float(next)
+
+    def inbetween_bm(self, bookmarks, val):
+        val = int(round(val))
+        prev, next = None, None
+        if bookmarks:
+            if val < bookmarks[0][0]: next = bookmarks[0][0]
+            if val > bookmarks[-1][0]: prev = bookmarks[-1][0]
+            if len(bookmarks) > 1:
+                for i in range(0, len(bookmarks) - 1):
+                    if val in range(bookmarks[i][0], bookmarks[i + 1][0]):
+                        prev = bookmarks[i][0]
+                        next = bookmarks[i + 1][0]
                         break
         return prev if prev is None else float(prev), next if next is None else float(next)
 

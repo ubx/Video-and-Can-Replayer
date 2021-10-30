@@ -71,14 +71,24 @@
                     app.btn_next(video_player)
 
             Button:
-                text: '-10s'
+                text: '<<1m'
+                on_press:
+                    app.btn_move(video_player, -60)
+
+            Button:
+                text: '<<10s'
                 on_press:
                     app.btn_move(video_player, -10)
 
             Button:
-                text: '+10s'
+                text: '10s>>'
                 on_press:
                     app.btn_move(video_player, +10)
+
+            Button:
+                text: '1m>>'
+                on_press:
+                    app.btn_move(video_player, +60)
 
             Button:
                 text: 'Bookmark'

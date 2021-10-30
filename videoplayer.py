@@ -23,6 +23,10 @@ Config.set('graphics', 'width', '1000')
 Config.set('graphics', 'height', '800')
 
 
+def create_annotation(start, text):
+    return {'start': start, 'duration': 10, 'text': text, 'bgcolor': [0.37, 1.00, 0.0, 0.7]}
+
+
 ##Config.write()
 
 class SyncpointDialog(ModalView):
@@ -53,8 +57,8 @@ class BookmarkDialog(ModalView):
         self.videoplayer.mainwindow.draw_bookmark(cur_position)
         self.videoplayer.bookmarks.append([int(cur_position), self.description])
         self.videoplayer.bookmarks.sort(key=lambda x: x[0])
-        ann = {'start': cur_position, 'duration': 10, 'text': self.description}
-        self.videoplayer.mainwindow.ids.video_player.add_annotation(ann)
+        self.videoplayer.mainwindow.ids.video_player.add_annotation(
+            create_annotation(start=cur_position - 5, text=self.description))
 
 
 class MainWindow(BoxLayout):
@@ -136,8 +140,7 @@ class VideoplayerApp(App):
         ann = {'start': 0, 'duration': 20, 'text': self.description}
         videoplayer.add_annotation(ann)
         for bm in self.bookmarks:
-            ann = {'start': bm[0] - 5, 'duration': 10, 'text': bm[1]}
-            videoplayer.add_annotation(ann)
+            videoplayer.add_annotation(create_annotation(start=bm[0] - 5, text=bm[1]))
         return self.file
 
     def on_state(self, instance, value):

@@ -59,51 +59,52 @@
             orientation: 'horizontal'
             size_hint_y: None
             height: '48dp'
+		    padding: 10
+		    spacing: 10
 
-            Button:
+            RoundedButton:
                 text: 'Prev'
                 on_press:
                     app.btn_previous(video_player)
 
-            Button:
+            RoundedButton:
                 text: '<<1m'
                 on_press:
                     app.btn_move(video_player, -60)
 
-            Button:
+            RoundedButton:
                 text: '<<10s'
                 on_press:
                     app.btn_move(video_player, -10)
 
-            Button:
+            RoundedButton:
                 text: '10s>>'
                 on_press:
                     app.btn_move(video_player, +10)
 
-            Button:
+            RoundedButton:
                 text: '1m>>'
                 on_press:
                     app.btn_move(video_player, +60)
 
-            Button:
+            RoundedButton:
                 text: 'Next'
                 on_press:
                     app.btn_next(video_player)
 
-            Button:
+            RoundedButton:
                 text: 'Bookmark'
                 on_press:
                     app.btn_bookmark(video_player)
 
-            Button:
+            RoundedButton:
                 text: 'Syncpoint'
                 on_press:
                     app.btn_syncpoint(video_player)
-            Button:
+            RoundedButton:
                 text: 'Exit'
                 on_press:
                     app.stop()
-
 
         BoxLayout:
             orientation: 'vertical'
@@ -191,3 +192,14 @@
                 text: "Cancel"
                 on_release:
                     root.dismiss()
+
+<RoundedButton@Button>
+	background_color: (0,0,0,0)
+	background_normal: ''
+	canvas.before:
+		Color:
+			rgba: (48/255,84/255,150/255,1)
+		RoundedRectangle:
+			size: self.size
+			pos: self.pos
+			radius: [18]

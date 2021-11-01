@@ -163,15 +163,15 @@ class VideoplayerApp(App):
         return time.strftime('%H:%M:%S', time.localtime(seconds))
 
     def btn_previous(self, videoplayer):
-        prev, _ = self.inbetween_bm(self.bookmarks, self.cur_position - 5.0)
+        prev, _ = self.inbetween_bm(self.bookmarks, self.cur_position)
         if prev:
-            videoplayer.seek(prev / videoplayer.duration)
+            videoplayer.seek((prev / videoplayer.duration) - 0.001)
         videoplayer.state = 'pause'
 
     def btn_next(self, videoplayer):
-        _, next = self.inbetween_bm(self.bookmarks, self.cur_position + 5.0)
+        _, next = self.inbetween_bm(self.bookmarks, self.cur_position)
         if next:
-            videoplayer.seek(next / videoplayer.duration)
+            videoplayer.seek((next / videoplayer.duration) + 0.001)
         videoplayer.state = 'pause'
 
     def btn_move(self, videoplayer, delta):

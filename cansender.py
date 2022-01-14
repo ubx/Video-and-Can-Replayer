@@ -40,7 +40,7 @@ class CanSender(Thread):
             try:
                 for message in self.in_sync:
                     if message.arbitration_id in self.filter_out:
-                        print('Filter out can id {:d})'.format(message.arbitration_id))
+                        print('Filter out can id {:d}'.format(message.arbitration_id))
                     else:
                         if self.bus:
                             self.bus.send(message, timeout=0.1)

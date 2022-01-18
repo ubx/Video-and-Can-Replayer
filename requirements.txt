@@ -1,0 +1,17 @@
+aenum==3.1.0
+certifi==2021.10.8
+charset-normalizer==2.0.6
+docutils @ file:///tmp/build/80754af9/docutils_1638528482764/work
+ffpyplayer==4.3.2
+idna==3.2
+Kivy @ file:///home/conda/feedstock_root/build_artifacts/kivy_1618700894315/work
+Kivy-Garden==0.1.4
+kivy-garden.mapview==1.0.5
+mapview==1.0.5
+olefile @ file:///Users/ktietz/demo/mc3/conda-bld/olefile_1629805411829/work
+Pillow==9.0.0
+Pygments @ file:///tmp/build/80754af9/pygments_1629234116488/work
+python-can==3.3.4
+requests==2.26.0
+urllib3==1.26.7
+wrapt==1.12.1

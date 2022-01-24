@@ -18,9 +18,7 @@ cnt = 0
 
 
 def codes_statistics(codes, node, code, codes_stats, id, ids_stats):
-    if node not in codes:
-        codes[node] = code
-    else:
+    if node in codes:
         i = 1
         if codes[node] == 255:
             codes[node] = 0
@@ -34,7 +32,7 @@ def codes_statistics(codes, node, code, codes_stats, id, ids_stats):
                 ids_stats[id] = 1
             else:
                 ids_stats[id] += 1
-        codes[node] = code
+    codes[node] = code
 
 
 def canid_statistics(ids, id):

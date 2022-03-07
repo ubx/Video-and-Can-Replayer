@@ -48,6 +48,8 @@ class CanSender(Thread):
                             self.bus_internal.send(message)
                         if not self.runevent.isSet():
                             break
+            except:
+                print("CAN send error")
             finally:
                 pass
 

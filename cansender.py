@@ -64,7 +64,6 @@ class CanSender(Thread):
         try:
             self.reader.stop()
             sleep(0.2)
-            self.reader.__exit__()
         finally:
             self.reader = None
 

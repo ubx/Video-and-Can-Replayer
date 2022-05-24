@@ -79,7 +79,7 @@ class MainWindow(BoxLayout):
             self.draw_bookmark(bm[0])
 
 
-from kivy.garden.mapview import MapMarker
+from kivy_garden.mapview import MapMarker
 
 
 class Glider(Widget):

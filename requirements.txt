@@ -1,6 +1,6 @@
 aenum==3.1.5
 brotlipy==0.7.0
-certifi==2021.5.30
+certifi==2022.12.7
 cffi @ file:///home/builder/ci_310/cffi_1642753365720/work
 charset-normalizer==2.0.12
 cryptography @ file:///home/builder/ci_310/cryptography_1640808721005/work

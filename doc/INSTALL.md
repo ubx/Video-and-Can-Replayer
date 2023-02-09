@@ -25,14 +25,3 @@
 
 
 * python VideoAndCanPlayer2.py config2.json --map
-
-# Create a Windows exe (experimental)
-
-* pip uninstall pyinstaller
-* pip install https://github.com/pyinstaller/pyinstaller/archive/develop.zip
-* pyinstaller VideoAndCanPlayer2.spec
-
-### Run it on Windows:
-
-* dist\VideoAndCanPlayer2.exe config2.json
-  

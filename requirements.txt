@@ -15,7 +15,7 @@ kivy-garden.mapview==1.0.5
 mapview==1.0.5
 msgpack==1.0.3
 packaging==21.3
-pipreqs==0.4.11
+pipreqs==0.4.12
 pycparser @ file:///tmp/build/80754af9/pycparser_1636541352034/work
 Pygments==2.11.2
 pyOpenSSL @ file:///opt/conda/conda-bld/pyopenssl_1643788558760/work

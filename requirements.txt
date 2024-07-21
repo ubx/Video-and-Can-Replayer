@@ -5,23 +5,23 @@ cffi @ file:///home/builder/ci_310/cffi_1642753365720/work
 charset-normalizer==2.0.12
 cryptography @ file:///home/builder/ci_310/cryptography_1640808721005/work
 docopt==0.6.2
-docutils==0.20.1
-ffpyplayer==4.5.0
+docutils==0.21.2
+ffpyplayer==4.5.1
 idna @ file:///tmp/build/80754af9/idna_1622654382723/work
 iris==1.0.7
-Kivy==2.2.1
+Kivy==2.3.0
 Kivy-Garden==0.1.5
 kivy-garden.mapview==1.0.6
-mapview==1.0.5
-msgpack==1.0.7
-packaging==23.2
+mapview==1.0.6
+msgpack==1.0.8
+packaging==24.1
 pipreqs==0.5.0
 pycparser @ file:///tmp/build/80754af9/pycparser_1636541352034/work
-Pygments==2.15.0
+Pygments==2.18.0
 pyOpenSSL @ file:///opt/conda/conda-bld/pyopenssl_1643788558760/work
 pyparsing==3.1.2
 PySocks @ file:///home/builder/ci_310/pysocks_1640793678128/work
-python-can==4.0.0
+python-can==4.3.0
 requests==2.32.0
 typing_extensions==4.1.1
 urllib3==2.2.2

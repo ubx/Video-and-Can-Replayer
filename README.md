@@ -13,3 +13,7 @@ ToDos
 
 * Bookmarks: add text description
 * Performance improve
+
+### Import CAN logfile into a sql db
+
+``````python logfile2sqldb.py <can-logfile> <db-file>``````

@@ -22,7 +22,7 @@ pyOpenSSL @ file:///opt/conda/conda-bld/pyopenssl_1643788558760/work
 pyparsing==3.1.2
 PySocks @ file:///home/builder/ci_310/pysocks_1640793678128/work
 python-can==4.3.0
-requests==2.32.0
+requests==2.32.4
 typing_extensions==4.1.1
 urllib3==2.2.2
 wrapt==1.13.3

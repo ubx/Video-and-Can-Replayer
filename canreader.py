@@ -15,6 +15,9 @@ def getFloat(data):
     return struct.unpack('>f', data[4:8])[0]
 
 
+def getInt(data: int):
+    return struct.unpack('>i', data[4:8])[0]
+
 class CanlogPos(threading.Thread):
     def __init__(self, infile, start_time=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -57,6 +60,10 @@ class CanlogPos(threading.Thread):
                         self.th = th + 360.0
                     else:
                         self.th = th
+                elif message.arbitration_id == 340:  # flap pos
+                    fp = getInt(message.data)
+                    print('fp = {}'.format(fp))
+
 
         except KeyboardInterrupt:
             pass

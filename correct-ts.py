@@ -1,6 +1,7 @@
 import argparse
 import datetime
 import os
+import re
 from statistics import mean, variance, stdev
 
 '''
@@ -22,7 +23,6 @@ args = parser.parse_args()
 inputFile = args.input
 syncwithgps = args.gps
 
-
 # (1564994147.496590) can0 78A#0A0C1CE5F7990000
 def getCanData(line):
     parts = (" ".join(line.split()).split())
@@ -42,25 +42,9 @@ def statistics(ids, id):
     ids[id] = ids[id] + 1
 
 
-## "(1564994154.769054) can0 40C#0A032A3A1BC27A49"
-## "(1569437515.1000000) can0 141#0A0200A942E1CBEA" --> ERROR
-def check(line):
-    try:
-        if not line.startswith("("):
-            return False
-        for c in line[1:11]:
-            if not c.isdigit():
-                return False
-        if line[11] != '.':
-            return False
-        for c in line[12:18]:
-            if not c.isdigit():
-                return False
-        if line[18] != ')':
-            return False
-        return True
-    except (IndexError):
-        return False
+def check(line: str) -> bool:
+    pattern = r'^\(\d+\.\d+\)\s+(?:can|vcan)\d*\s+[0-9A-Fa-f]+#[0-9A-Fa-f]+$'
+    return bool(re.match(pattern, line))
 
 
 def close_logfile(ts_log):
@@ -112,64 +96,66 @@ with open(inputFile) as inf:
         if new_log is None:
             log_file_nr = log_file_nr + 1
             new_log = open("data/newlog_{}.log".format(log_file_nr), "w+")
-        if not check(line):
-            print("ERROR, line={:d} >>>{:s}<<< \n".format(cnt, line))
-        else:
-            ts, canDevStr, canIdStr, dataStr, nodeIdStr = getCanData(line)
-            diff = 0.0
-            canId = int(canIdStr, 16)
-            if ts_first is None:
-                ts_first = ts
-            if ts_prev is None:
-                ts_prev = ts
+        if not line.startswith("*"):
+            if not check(line):
+                print("ERROR, line={:d} >>>{:s}<<<".format(cnt, line.replace("\n", "")))
             else:
-                if ts - ts_prev > 1.0:
-                    print("ERROR, gap between ts {:f} and {:f} \n".format(ts_prev, ts))
-                ts_prev = ts
+                ts, canDevStr, canIdStr, dataStr, nodeIdStr = getCanData(line)
+                diff = 0.0
+                canId = int(canIdStr, 16)
+                if ts_first is None:
+                    ts_first = ts
+                if ts_prev is None:
+                    ts_prev = ts
+                else:
+                    if ts - ts_prev > 1.1:
+                        print("ERROR, gap between ts {:f} and {:f}, {:.3f}s \n".format(ts_prev, ts, ts - ts_prev))
+                    ts_prev = ts
 
-            if canId == 0x1FFFFFF0:  # Time sync
-                ts_log = datetime.datetime((int(line[34:36], 16) + 2000), int(line[37:38], 16),
-                                           int(line[38:40], 16), int(line[40:42], 16),
-                                           int(line[42:44], 16), int(line[44:46], 16)).timestamp()
-                diff = ts_log - ts
-                if ts_log_last is None:
+                if canId == 0x1FFFFFF0:  # Time sync
+                    ts_log = datetime.datetime((int(line[34:36], 16) + 2000), int(line[37:38], 16),
+                                               int(line[38:40], 16), int(line[40:42], 16),
+                                               int(line[42:44], 16), int(line[44:46], 16)).timestamp()
+                    diff = ts_log - ts
+                    if ts_log_last is None:
+                        ts_log_last = ts_log
+                    ts_log_diff = ts_log - ts_log_last
                     ts_log_last = ts_log
-                ts_log_diff = ts_log - ts_log_last
-                ts_log_last = ts_log
-                if ts_log_first is None:
-                    ts_log_first = ts_log
-                line = None
+                    if ts_log_first is None:
+                        ts_log_first = ts_log
+                    line = None
 
-            elif canId == 1200:  # UTC
-                if not dataDateStr is None:
-                    ts_gps = datetime.datetime((int(dataDateStr[4:6], 16) * 100) + int(dataDateStr[6:8], 16),
-                                               int(dataDateStr[2:4], 16),
-                                               int(dataDateStr[0:2], 16), int(dataStr[0:2], 16), int(dataStr[2:4], 16),
-                                               int(dataStr[4:6], 16)).timestamp()
-                    if ts_gps_first is None:
-                        ts_gps_first = ts_gps
-                    mmm.append((ts + diff) - ts_gps)
-                dataUtcStr = dataStr
+                elif canId == 1200:  # UTC
+                    if not dataDateStr is None:
+                        ts_gps = datetime.datetime((int(dataDateStr[4:6], 16) * 100) + int(dataDateStr[6:8], 16),
+                                                   int(dataDateStr[2:4], 16),
+                                                   int(dataDateStr[0:2], 16), int(dataStr[0:2], 16),
+                                                   int(dataStr[2:4], 16),
+                                                   int(dataStr[4:6], 16)).timestamp()
+                        if ts_gps_first is None:
+                            ts_gps_first = ts_gps
+                        mmm.append((ts + diff) - ts_gps)
+                    dataUtcStr = dataStr
 
-            elif canId == 1206:  # Date
-                dataDateStr = dataStr
+                elif canId == 1206:  # Date
+                    dataDateStr = dataStr
 
-            if line is not None:
-                parts = (" ".join(line.split()).split())
-                new_log.write("({:f}) {} {}\n".format(ts + diff, parts[1], parts[2]))
-                new_cnt = new_cnt + 1
+                if line is not None:
+                    parts = (" ".join(line.split()).split())
+                    new_log.write("({:f}) {} {}\n".format(ts + diff, parts[1], parts[2]))
+                    new_cnt = new_cnt + 1
 
-            if ts_log_first is not None and ts_log_diff > 1.0:
-                close_logfile(ts_log_first)
-                print_gps_diff_statistics()
-                if syncwithgps:
-                    sync_with_gps(new_log_file_name, mean(mmm))
-                mmm = []
-                new_log = None
-                ts_log_first = None
+                if ts_log_first is not None and ts_log_diff > 1.0:
+                    close_logfile(ts_log_first)
+                    print_gps_diff_statistics()
+                    if syncwithgps:
+                        sync_with_gps(new_log_file_name, mean(mmm))
+                    mmm = []
+                    new_log = None
+                    ts_log_first = None
 
-            statistics(canIds, canId)
-            statistics(nodeIds, int(nodeIdStr, 16))
+                statistics(canIds, canId)
+                statistics(nodeIds, int(nodeIdStr, 16))
 
     if ts_log_first is None:
         ts_log_first = ts_gps_first

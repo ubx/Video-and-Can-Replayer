@@ -1,6 +1,7 @@
 import threading
 from threading import Thread
 from time import sleep
+import logging
 
 from can import Bus, MessageSync
 
@@ -15,15 +16,20 @@ class CanSender(Thread):
         self.infile = infile
         self.start_time = start_time
         self.filter_out = filter_out
+        self.bus_internal = None
         try:
             self.config = {'single_handle': True}
             self.config['interface'] = interface
             self.bus = Bus(channel, **self.config)
-        except:
+        except Exception as e:
             self.bus = None
-            print('WARNING Can channel', channel, 'not connected')
+            logging.warning('CAN channel %s not connected: %s', channel, e)
         if with_internal_bus:
-            self.bus_internal = Bus(channel='internal', bustype='virtual')
+            try:
+                self.bus_internal = Bus(channel='internal', bustype='virtual')
+            except Exception as e:
+                self.bus_internal = None
+                logging.warning('Internal CAN bus not available: %s', e)
         self.runevent = threading.Event()
         self.runevent.clear()
         self.killevent = threading.Event()
@@ -40,16 +46,16 @@ class CanSender(Thread):
             try:
                 for message in self.in_sync:
                     if message.arbitration_id in self.filter_out:
-                        print('Filter out can id {:d}'.format(message.arbitration_id))
+                        logging.info('Filter out CAN id %d', message.arbitration_id)
                     else:
                         if self.bus:
                             self.bus.send(message, timeout=0.1)
                         if self.bus_internal:
                             self.bus_internal.send(message)
-                        if not self.runevent.isSet():
+                        if not self.runevent.is_set():
                             break
-            except:
-                print("CAN send error")
+            except Exception:
+                logging.exception("CAN send error")
             finally:
                 pass
 
@@ -57,7 +63,7 @@ class CanSender(Thread):
                 self.stop_reader()
             self.runevent.clear()
             self.doneevent.set()
-            if not self.killevent.isSet():
+            if not self.killevent.is_set():
                 break
 
     def stop_reader(self):
@@ -72,21 +78,34 @@ class CanSender(Thread):
         self.runevent.set()
 
     def stop(self):
-         if self.runevent.isSet():
+        if self.runevent.is_set():
             self.runevent.clear()
             self.doneevent.clear()
             self.doneevent.wait()
 
     def exit(self):
-        self.runevent.clear()
-        sleep(1)
+        # Request thread to terminate and unblock waits
+        self.killevent.clear()
+        self.runevent.set()
+        sleep(0.1)
         if self.reader:
             self.stop_reader()
-        self.killevent.clear()
         if self.bus:
-            self.bus.shutdown()
+            try:
+                self.bus.shutdown()
+            except Exception as e:
+                logging.warning('Error during CAN bus shutdown: %s', e)
         if self.bus_internal:
-            self.bus_internal.shutdown()
+            try:
+                self.bus_internal.shutdown()
+            except Exception as e:
+                logging.warning('Error during internal CAN bus shutdown: %s', e)
+        # Give the thread a moment to finish
+        try:
+            self.join(timeout=2.0)
+        except RuntimeError:
+            # join called from within the same thread; ignore
+            pass
 
 
 if __name__ == '__main__':

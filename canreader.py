@@ -1,6 +1,7 @@
 import datetime
 import struct
 import threading
+import logging
 import can
 from can import MessageSync
 
@@ -33,16 +34,20 @@ class CanlogPos(threading.Thread):
     # function using _stop function
     def stop(self):
         self.running = False
-        self.reader.stop()
+        if self.reader:
+            try:
+                self.reader.stop()
+            except Exception as e:
+                logging.warning("Error stopping CanlogPos reader: %s", e)
         self._stop.set()
 
     def stopped(self):
-        return self._stop.isSet()
+        return self._stop.is_set()
 
     def run(self):
         self.reader = LogReader2(self.infile, self.start_time)
         in_sync = MessageSync(self.reader, timestamps=True)
-        print('Can LogReader (Started on {})'.format(datetime.now()))
+        print('Can LogReader (Started on {})'.format(datetime.datetime.now()))
         self.running = True
         try:
             for message in in_sync:
@@ -84,8 +89,10 @@ def toDeg(val):
 class CanbusPos(threading.Thread):
     def __init__(self, channel, bustype, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.daemon = True
         self.bus = can.interface.Bus(channel=channel, bustype=bustype)
         self.utc = None
+        self.utc_date_data = None
         self.lat = None
         self.lon = None
         self.th = None

@@ -186,3 +186,44 @@ Changelog updates
 - canreader.py: CanbusPos robustness improved, CanlogPos minor bugs fixed, logging introduced.
 
 End of review.
+
+
+---
+
+Additional review: correct-ts.py
+
+Date: 2025-10-10
+
+Summary
+
+- correct-ts.py adjusts timestamps in CAN dump files using logger time sync (0x1FFFFFF0) and optional GPS time (IDs
+  1200/1206).
+- The script worked in happy paths but had several robustness issues that could cause crashes on malformed input or edge
+  cases.
+
+Key findings
+
+- Argument parsing: input file argument was optional; opening None would fail later without a clear error.
+- Timestamp parsing: used a brittle slice parts[0][1:18]; safer to parse all between parentheses [1:-1].
+- statistics() double-counted first occurrence by initializing to 1 and incrementing again.
+- GPS diff stats: variance()/stdev() on empty or single-element lists raised exceptions; code didn’t guard against empty
+  mmm.
+- Time sync rollover: compared ts_log_diff > 1.0 even when ts_log_diff could be None, causing TypeError.
+- GPS syncing: attempted to compute mean(mmm) even when mmm could be empty.
+
+Fixes implemented (minimal, high-impact)
+
+- Made -input argument required in argparse to fail fast with a clear message.
+- Fixed timestamp extraction to use parts[0][1:-1] instead of truncating to a fixed width.
+- Rewrote statistics() to increment safely using dict.get(..., 0)+1.
+- Hardened print_gps_diff_statistics(): handles empty and single-element mmm without exceptions and prints a helpful
+  message when no diffs were collected.
+- Guarded ts_log_diff against None before numeric comparison.
+- Only invoke GPS sync when diffs were collected (len(mmm) > 0) to avoid mean() on empty data.
+
+Notes / future improvements
+
+- Consider refactoring the script into a main() function with a __main__ guard for safer import behavior.
+- Replace string/offset-based time sync parsing with structured decoding from the parsed CAN data to reduce fragility.
+- Replace prints with logging and add verbosity flags.
+- Validate that the data/ directory exists or allow output directory configuration.

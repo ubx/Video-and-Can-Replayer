@@ -15,7 +15,7 @@ from statistics import mean, variance, stdev
 parser = argparse.ArgumentParser(
     description='Correct time stamps according to the logger time sync (canId 0x1FFFFFF0) and optional GPS time (UTC).'
                 'Only useful for CANaerospace format!')
-parser.add_argument('-input', metavar='input', type=str, help='Input logfile.')
+parser.add_argument('-input', metavar='input', type=str, required=True, help='Input logfile.')
 parser.add_argument('-gps', action='store_true', help='Sync with GPS time (canIDs 1200 and 1206.')
 
 args = parser.parse_args()
@@ -26,7 +26,7 @@ syncwithgps = args.gps
 # (1564994147.496590) can0 78A#0A0C1CE5F7990000
 def getCanData(line):
     parts = (" ".join(line.split()).split())
-    ts = float(parts[0][1:18])
+    ts = float(parts[0][1:-1])
     canDevStr = parts[1]
     parts2 = parts[2].split("#")
 
@@ -36,10 +36,8 @@ def getCanData(line):
     return ts, canDevStr, canIdStr, dataStr, nodeIdStr
 
 
-def statistics(ids, id):
-    if id not in ids:
-        ids[id] = 1
-    ids[id] = ids[id] + 1
+def statistics(ids, id_):
+    ids[id_] = ids.get(id_, 0) + 1
 
 
 def check(line: str) -> bool:
@@ -59,9 +57,14 @@ def close_logfile(ts_log):
 
 
 def print_gps_diff_statistics():
-    global mmm
+    global mmm, new_log_file_name, new_cnt
+    if not mmm:
+        print(new_log_file_name, " cnt=", new_cnt, "no GPS diffs collected")
+        return
     m = mean(mmm)
-    print(new_log_file_name, " cnt=", new_cnt, "mean=", m, "variance=", variance(mmm, m), "stdev=", stdev(mmm, m),
+    var = variance(mmm) if len(mmm) > 1 else 0.0
+    sd = stdev(mmm) if len(mmm) > 1 else 0.0
+    print(new_log_file_name, " cnt=", new_cnt, "mean=", m, "variance=", var, "stdev=", sd,
           "max=", max(mmm), "min=", min(mmm))
 
 
@@ -145,10 +148,10 @@ with open(inputFile) as inf:
                     new_log.write("({:f}) {} {}\n".format(ts + diff, parts[1], parts[2]))
                     new_cnt = new_cnt + 1
 
-                if ts_log_first is not None and ts_log_diff > 1.0:
+                if ts_log_first is not None and (ts_log_diff is not None) and ts_log_diff > 1.0:
                     close_logfile(ts_log_first)
                     print_gps_diff_statistics()
-                    if syncwithgps:
+                    if syncwithgps and mmm:
                         sync_with_gps(new_log_file_name, mean(mmm))
                     mmm = []
                     new_log = None
@@ -162,7 +165,7 @@ with open(inputFile) as inf:
 
     close_logfile(ts_log_first)
     print_gps_diff_statistics()
-    if syncwithgps:
+    if syncwithgps and mmm:
         sync_with_gps(new_log_file_name, mean(mmm))
 
 print("canId statistics")

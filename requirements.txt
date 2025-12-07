@@ -24,6 +24,6 @@ PySocks @ file:///home/builder/ci_310/pysocks_1640793678128/work
 python-can==4.3.0
 requests==2.32.4
 typing_extensions==4.1.1
-urllib3==2.5.0
+urllib3==2.6.0
 wrapt==1.13.3
 yarg==0.1.9

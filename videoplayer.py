@@ -12,6 +12,7 @@ from kivy.config import Config
 from kivy.graphics import Color, Line
 from kivy.graphics.svg import Svg
 from kivy.properties import NumericProperty, StringProperty
+from kivy.resources import resource_find
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.modalview import ModalView
 from kivy.uix.scatter import Scatter
@@ -97,6 +98,8 @@ class MapWidget(Scatter):
 class VideoplayerApp(App):
     heading_angle = NumericProperty(0)
     utc_str = StringProperty('--:--:--')
+    # Absolute path to a safe thumbnail image, resolved via Kivy resources
+    thumbnail_path = StringProperty('')
 
     def __init__(self, file, syncpoints, bookmarks, decription, cansender=None, position_srv=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -108,6 +111,11 @@ class VideoplayerApp(App):
         self.cur_position = 0
         self.cur_duration = None
         self.position_srv = position_srv
+        # Resolve a valid thumbnail immediately so KV can bind to it
+        # Prefer Kivy's built-in icon as it is guaranteed to exist with Kivy installations
+        thumb = resource_find('data/logo/kivy-icon-128.png') or resource_find('data/logo/kivy-icon-512.png')
+        if thumb:
+            self.thumbnail_path = thumb
 
     def build(self):
         self.icon = 'app.ico'
@@ -134,6 +142,31 @@ class VideoplayerApp(App):
             Clock.schedule_interval(clock_callback, 0.25)
         else:
             self.mainwindow.ids.mapwidget.clear_widgets()
+        # Avoid Kivy Image trying to load the MP4 when the VideoPlayer is in 'stop' state
+        # by providing a valid thumbnail image (KV sets it via app.thumbnail_path).
+        # As an extra safety, set directly if KV binding didn't apply for any reason.
+        try:
+            vp = self.mainwindow.ids.get('video_player')
+            if vp is not None and self.thumbnail_path and getattr(vp, 'thumbnail', None) != self.thumbnail_path:
+                vp.thumbnail = self.thumbnail_path
+            # Defer setting the video source until after the widget is fully built,
+            # ensuring the thumbnail is already applied and preventing Image from
+            # attempting to load the MP4.
+            if vp is not None:
+                def _apply_source(dt):
+                    try:
+                        # Switch to play before assigning source so VideoPlayer doesn't
+                        # try to render the stop-state preview Image from the MP4 path.
+                        vp.state = 'play'
+                        vp.source = self.get_file(vp)
+                        # Immediately pause so the app starts in a paused state for the user.
+                        Clock.schedule_once(lambda _dt: setattr(vp, 'state', 'pause'), 0)
+                    except Exception:
+                        pass
+
+                Clock.schedule_once(_apply_source, 0)
+        except Exception:
+            pass
         return self.mainwindow
 
     def get_file(self, videoplayer):

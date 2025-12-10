@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+import os
 import argparse
 import json
 import logging
@@ -30,6 +31,20 @@ def load_config(path: str) -> dict:
 def main(argv=None) -> int:
     # basic logging setup (stderr)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+
+    # Suppress the single misleading Kivy Image error where it tries to open MP4 as an image.
+    class _DropMp4ImageErrorFilter(logging.Filter):
+        def filter(self, record: logging.LogRecord) -> bool:
+            try:
+                msg = record.getMessage()
+            except Exception:
+                msg = str(record.msg)
+            # Keep all records except the specific Image error about loading the MP4
+            if 'Error loading <' in msg and '.mp4' in msg and ('[Image' in msg or 'Image:' in msg):
+                return False
+            return True
+
+    logging.getLogger('kivy').addFilter(_DropMp4ImageErrorFilter())
 
     args = parse_args(argv)
     try:
@@ -98,6 +113,8 @@ def main(argv=None) -> int:
             position_srv = CanbusPos(channel="internal", bustype="virtual")
             position_srv.start()
 
+        # Configure Kivy image providers to avoid trying to load MP4 via the Image subsystem (best effort).
+        os.environ.setdefault("KIVY_IMAGE", "sdl2,tex,dds")
         # Heavy import is kept late on purpose (Kivy startup cost)
         from videoplayer import VideoplayerApp
 

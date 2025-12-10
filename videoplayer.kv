@@ -13,9 +13,12 @@
             VideoPlayer2:
                 id: video_player
                 size_hint: 1.0,1.0
-                source: app.get_file(video_player)
+                # Provide a valid image so Kivy's Image widget doesn't try to open the MP4
+                # Use the resolved absolute path from the App to avoid missing-resource errors
+                thumbnail: app.thumbnail_path if app.thumbnail_path else ''
                 allow_stretch: True
-                state: 'stop'
+                # Start in 'pause' to avoid VideoPlayer's stop-preview Image trying to open the MP4
+                state: 'pause'
                 on_state:
                     app.on_state(args[0], args[1])
                 on_position:

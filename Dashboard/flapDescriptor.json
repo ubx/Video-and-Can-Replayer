@@ -1,7 +1,7 @@
 {
   "flap2symbol": {
-    "Description": "Flap postion to symbol",
-    "tolerance": 4,
+    "Description": "Flap position to symbol",
+    "tolerance": 6,
     "table": [
       [
         94,

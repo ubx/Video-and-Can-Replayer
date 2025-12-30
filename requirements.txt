@@ -4,6 +4,7 @@ certifi==2024.7.4
 cffi @ file:///home/builder/ci_310/cffi_1642753365720/work
 charset-normalizer==2.0.12
 cryptography @ file:///home/builder/ci_310/cryptography_1640808721005/work
+dash==3.3.0
 docopt==0.6.2
 docutils==0.21.2
 ffpyplayer==4.5.1

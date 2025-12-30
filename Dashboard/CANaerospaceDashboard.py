@@ -130,7 +130,7 @@ def update_dashboard(n):
         mode="gauge+number",
         value=round(ias_kmh, 0),
         title={'text': "IAS (km/h)"},
-        gauge={"axis": {"range": [0, 300]}}
+        gauge={"axis": {"range": [50, 300]}}
     ))
 
     if flap is not None:

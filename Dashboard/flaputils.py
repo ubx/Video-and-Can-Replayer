@@ -19,7 +19,7 @@ _OPTIMAL_SPEED_DATA = _ALL_DATA.get('speedpolar', {}).get('optimale_fluggeschwin
 
 _TABLE = _FLAP_DATA['table']
 _TOLERANCE = _FLAP_DATA['tolerance']
-_EMPTY_MASS = _ALL_DATA.get('speedpolar', {}).get('empty_mass')
+_EMPTY_MASS = _ALL_DATA.get('speedpolar', {}).get('empty_mass_kg')
 
 def get_empty_mass():
     """Returns the empty mass of the aircraft."""

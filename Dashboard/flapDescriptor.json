@@ -39,7 +39,7 @@
   },
   "speedpolar": {
     "flugelspannweite_m": 18,
-    "empty_mass": 373.15,
+    "empty_mass_kg": 373.15,
     "optimale_fluggeschwindigkeit_kmh": {
       "gewicht_kg": [
         390,

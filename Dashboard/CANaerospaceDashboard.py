@@ -20,21 +20,24 @@ CAN_SFF_MASK = 0x000007FF
 lat = lon = gs = tt = ias = tas = cas = alt = vario = enl = flap = None
 pilot_mass = 0
 
+CAN_IDS = {
+    315: 'ias',
+    316: 'tas',
+    317: 'cas',
+    322: 'alt',
+    340: 'flap',
+    354: 'vario',
+    1036: 'lat',
+    1037: 'lon',
+    1039: 'gs',
+    1040: 'tt',
+    1200: 'utc',
+    1316: 'pilot_mass',
+    1506: 'enl'
+}
+
 bus = can.interface.Bus(channel=channel, interface='socketcan')
-bus.set_filters(
-    [{"can_id": 315, "can_mask": CAN_SFF_MASK},
-     {"can_id": 316, "can_mask": CAN_SFF_MASK},
-     {"can_id": 317, "can_mask": CAN_SFF_MASK},
-     {"can_id": 322, "can_mask": CAN_SFF_MASK},
-     {"can_id": 340, "can_mask": CAN_SFF_MASK},
-     {"can_id": 354, "can_mask": CAN_SFF_MASK},
-     {"can_id": 1036, "can_mask": CAN_SFF_MASK},
-     {"can_id": 1037, "can_mask": CAN_SFF_MASK},
-     {"can_id": 1039, "can_mask": CAN_SFF_MASK},
-     {"can_id": 1040, "can_mask": CAN_SFF_MASK},
-     {"can_id": 1200, "can_mask": CAN_SFF_MASK},
-     {"can_id": 1316, "can_mask": CAN_SFF_MASK},
-     {"can_id": 1506, "can_mask": CAN_SFF_MASK}])
+bus.set_filters([{"can_id": can_id, "can_mask": CAN_SFF_MASK} for can_id in CAN_IDS.keys()])
 
 
 def getFloat(canMsg):
@@ -57,6 +60,10 @@ def can_receive_loop():
     global lat, lon, gs, tt, ias, tas, cas, alt, vario, enl, flap, pilot_mass
     try:
         for canMsg in bus:
+            if canMsg.arbitration_id not in CAN_IDS:
+                print(f"Unknown ID {canMsg.arbitration_id}: {canMsg.data.hex()}")
+                continue
+
             if canMsg.arbitration_id == 1200:  # UTC
                 pass  # getChar4(canMsg)
             elif canMsg.arbitration_id == 315:
@@ -83,8 +90,6 @@ def can_receive_loop():
                 pilot_mass = getUshort(canMsg)
             elif canMsg.arbitration_id == 1506:
                 enl = getUshort(canMsg)
-            else:
-                print(f"Unknown ID {canMsg.arbitration_id}: {canMsg.data.hex()}")
     except Exception as e:
         print(f"CAN receive error: {e}")
 

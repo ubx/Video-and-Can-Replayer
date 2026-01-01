@@ -122,10 +122,13 @@ if __name__ == "__main__":
                              # min = 94 + 0.5833 * (106-94) = 94 + 7 = 101
                              # max = 128 + 0.5833 * (145-128) = 128 + 0.5833 * 17 = 128 + 9.9 = 137.9
                              # 130 is within [101, 137.9]
+            (580, 270, "S1"),
+            (580, 70, "S1"),
         ]
         for w, v, expected in test_cases:
             res = get_optimal_flap(w, v)
-            print(f"Weight {w}kg, Speed {v}km/h -> Optimal Flap: {res} (Expected: {expected})")
+            print(
+                f"Weight {w}kg, Speed {v}km/h -> Optimal Flap: {res} (Expected: {expected}) {'OK' if expected == res else 'NOK'}")
 
     except Exception as e:
         import traceback

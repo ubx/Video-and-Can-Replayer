@@ -1,28 +1,50 @@
 import json
 import os
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def load_flap_table(filepath='flapDescriptor.json'):
-    """Loads the flap position to symbol mapping table and optimal speeds from a JSON file."""
+    """
+    Loads the flap position to symbol mapping table and optimal speeds from a JSON file.
+    
+    :param filepath: Path to the JSON file.
+    :return: Loaded JSON data as a dictionary.
+    """
     if not os.path.exists(filepath):
-        # Fallback to absolute path or search in the same directory as the script
+        # Fallback to searching in the same directory as the script
         script_dir = os.path.dirname(os.path.abspath(__file__))
         filepath = os.path.join(script_dir, filepath)
 
-    with open(filepath, 'r') as f:
-        data = json.load(f)
-    return data
+    if not os.path.exists(filepath):
+        logger.error(f"Flap descriptor file not found: {filepath}")
+        return {}
+
+    try:
+        with open(filepath, 'r') as f:
+            data = json.load(f)
+        return data
+    except (json.JSONDecodeError, IOError) as e:
+        logger.error(f"Error loading flap descriptor: {e}")
+        return {}
 
 # Load the data once at module initialization
 _ALL_DATA = load_flap_table()
-_FLAP_DATA = _ALL_DATA['flap2symbol']
+_FLAP_DATA = _ALL_DATA.get('flap2symbol', {})
 _OPTIMAL_SPEED_DATA = _ALL_DATA.get('speedpolar', {}).get('optimale_fluggeschwindigkeit_kmh', {})
 
-_TABLE = _FLAP_DATA['table']
-_TOLERANCE = _FLAP_DATA['tolerance']
+_TABLE = _FLAP_DATA.get('table', [])
+_TOLERANCE = _FLAP_DATA.get('tolerance', 0)
 _EMPTY_MASS = _ALL_DATA.get('speedpolar', {}).get('empty_mass_kg')
 
 def get_empty_mass():
-    """Returns the empty mass of the aircraft."""
+    """
+    Returns the empty mass of the aircraft.
+    
+    :return: Empty mass in kg, or None if not available.
+    """
     return _EMPTY_MASS
 
 _WEIGHTS = _OPTIMAL_SPEED_DATA.get('gewicht_kg', [])
@@ -32,13 +54,17 @@ def get_flap_symbol(position, flap_data=None):
     """
     Finds the flap symbol for a given position based on the provided table and tolerance.
     If flap_data is None, it uses the module-level _TABLE and _TOLERANCE.
+    
+    :param position: Current flap position.
+    :param flap_data: Optional dictionary containing 'table' and 'tolerance'.
+    :return: Flap symbol (str) or None if no match found.
     """
     if flap_data is None:
         table = _TABLE
         tolerance = _TOLERANCE
     else:
-        table = flap_data['table']
-        tolerance = flap_data['tolerance']
+        table = flap_data.get('table', [])
+        tolerance = flap_data.get('tolerance', 0)
     
     for target_pos, symbol in table:
         if abs(position - target_pos) <= tolerance:
@@ -50,6 +76,10 @@ def get_optimal_flap(gewicht, geschwindigkeit):
     """
     Finds the optimal flap symbol (wk) for a given weight and speed.
     Interpolates speed boundaries for arbitrary weights.
+    
+    :param gewicht: Total weight in kg.
+    :param geschwindigkeit: Indicated airspeed in km/h.
+    :return: Optimal flap symbol (str) or None.
     """
     if not _WEIGHTS or not _BEREICHE:
         return None
@@ -85,7 +115,7 @@ def get_optimal_flap(gewicht, geschwindigkeit):
 
             if v_min <= geschwindigkeit <= v_max:
                 return bereich['wk']
-        elif v1_range: # Fallback if only one weight found (shouldn't happen with valid data)
+        elif v1_range:  # Fallback if only one weight found
             if v1_range[0] <= geschwindigkeit <= v1_range[1]:
                 return bereich['wk']
 

@@ -1,6 +1,9 @@
 import argparse
 import struct
 import threading
+import logging
+from dataclasses import dataclass, field
+from typing import Optional, Dict
 
 import can
 from dash import Dash, dcc, html
@@ -9,16 +12,11 @@ import plotly.graph_objects as go
 
 from flaputils import get_flap_symbol, get_optimal_flap, get_empty_mass
 
-parser = argparse.ArgumentParser(description='Read position updates from can-bus and print it')
-parser.add_argument('-channel', metavar='channel', type=str, default='can0', help='Canbus, default=can0')
-args = parser.parse_args()
-channel = args.channel
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 CAN_SFF_MASK = 0x000007FF
-
-# Global variables for storing the latest values from CAN bus
-lat = lon = gs = tt = ias = tas = cas = alt = vario = enl = flap = None
-pilot_mass = 0
 
 CAN_IDS = {
     315: 'ias',
@@ -36,69 +34,118 @@ CAN_IDS = {
     1506: 'enl'
 }
 
-# Invert CAN_IDS to map names to IDs for cleaner comparisons
 ID_MAP = {v: k for k, v in CAN_IDS.items()}
 
-bus = can.interface.Bus(channel=channel, interface='socketcan')
-bus.set_filters([{"can_id": can_id, "can_mask": CAN_SFF_MASK} for can_id in CAN_IDS.keys()])
+
+@dataclass
+class FlightData:
+    lock: threading.Lock = field(default_factory=threading.Lock)
+    ias: Optional[float] = None
+    tas: Optional[float] = None
+    cas: Optional[float] = None
+    alt: Optional[float] = None
+    vario: Optional[float] = None
+    flap: Optional[int] = None
+    lat: Optional[float] = None
+    lon: Optional[float] = None
+    gs: Optional[float] = None
+    tt: Optional[float] = None
+    pilot_mass: float = 0
+    enl: Optional[int] = None
+
+    def update(self, key: str, value: any):
+        with self.lock:
+            setattr(self, key, value)
+
+    def get_snapshot(self) -> Dict:
+        with self.lock:
+            return {
+                'ias': self.ias,
+                'tas': self.tas,
+                'cas': self.cas,
+                'alt': self.alt,
+                'vario': self.vario,
+                'flap': self.flap,
+                'lat': self.lat,
+                'lon': self.lon,
+                'gs': self.gs,
+                'tt': self.tt,
+                'pilot_mass': self.pilot_mass,
+                'enl': self.enl
+            }
 
 
-def getFloat(canMsg):
-    return struct.unpack('>f', canMsg.data[4:8])[0]
+class CANReceiver:
+    def __init__(self, channel: str, flight_data: FlightData):
+        self.channel = channel
+        self.flight_data = flight_data
+        self.bus = None
+        self.thread = None
+        self.running = False
+
+    def start(self):
+        try:
+            self.bus = can.interface.Bus(channel=self.channel, interface='socketcan')
+            self.bus.set_filters([{"can_id": can_id, "can_mask": CAN_SFF_MASK} for can_id in CAN_IDS.keys()])
+            self.running = True
+            self.thread = threading.Thread(target=self._receive_loop, daemon=True)
+            self.thread.start()
+            logger.info(f"CAN Receiver started on {self.channel}")
+        except Exception as e:
+            logger.error(f"Failed to start CAN bus on {self.channel}: {e}")
+
+    def _receive_loop(self):
+        while self.running:
+            try:
+                can_msg = self.bus.recv(timeout=1.0)
+                if can_msg is None:
+                    continue
+
+                arb_id = can_msg.arbitration_id
+                if arb_id not in CAN_IDS:
+                    logger.debug(f"Unknown ID {arb_id}: {can_msg.data.hex()}")
+                    continue
+
+                name = CAN_IDS[arb_id]
+                if name == 'utc':
+                    pass
+                elif name in ['ias', 'tas', 'cas', 'alt', 'vario', 'gs', 'tt']:
+                    self.flight_data.update(name, self._get_float(can_msg))
+                elif name in ['lat', 'lon']:
+                    self.flight_data.update(name, self._get_double_l(can_msg))
+                elif name == 'flap':
+                    self.flight_data.update(name, self._get_char(can_msg))
+                elif name in ['pilot_mass', 'enl']:
+                    self.flight_data.update(name, self._get_ushort(can_msg))
+
+            except Exception as e:
+                logger.error(f"Error in CAN receive loop: {e}")
+
+    @staticmethod
+    def _get_float(can_msg):
+        return struct.unpack('>f', can_msg.data[4:8])[0]
+
+    @staticmethod
+    def _get_double_l(can_msg):
+        return struct.unpack('>l', can_msg.data[4:8])[0] / 1E7
+
+    @staticmethod
+    def _get_ushort(can_msg):
+        return struct.unpack('>H', can_msg.data[4:6])[0]
+
+    @staticmethod
+    def _get_char(can_msg):
+        return struct.unpack('B', can_msg.data[4:5])[0]
 
 
-def getDoubleL(canMsg):
-    return struct.unpack('>l', canMsg.data[4:8])[0] / 1E7
+# Main initialization
+parser = argparse.ArgumentParser(description='Read position updates from can-bus and print it')
+parser.add_argument('-channel', metavar='channel', type=str, default='can0', help='Canbus, default=can0')
+args = parser.parse_args()
 
-
-def getUshort(canMsg):
-    return struct.unpack('>H', canMsg.data[4:6])[0]
-
-
-def getChar(canMsg):
-    return struct.unpack('B', canMsg.data[4:5])[0]
-
-
-def can_receive_loop():
-    global lat, lon, gs, tt, ias, tas, cas, alt, vario, enl, flap, pilot_mass
-    try:
-        for canMsg in bus:
-            if canMsg.arbitration_id not in CAN_IDS:
-                print(f"Unknown ID {canMsg.arbitration_id}: {canMsg.data.hex()}")
-                continue
-
-            if canMsg.arbitration_id == ID_MAP.get('utc'):  # UTC
-                pass  # getChar4(canMsg)
-            elif canMsg.arbitration_id == ID_MAP.get('ias'):
-                ias = getFloat(canMsg)
-            elif canMsg.arbitration_id == ID_MAP.get('tas'):
-                tas = getFloat(canMsg)
-            elif canMsg.arbitration_id == ID_MAP.get('cas'):
-                cas = getFloat(canMsg)
-            elif canMsg.arbitration_id == ID_MAP.get('alt'):
-                alt = getFloat(canMsg)
-            elif canMsg.arbitration_id == ID_MAP.get('flap'):
-                flap = getChar(canMsg)
-            elif canMsg.arbitration_id == ID_MAP.get('vario'):
-                vario = getFloat(canMsg)
-            elif canMsg.arbitration_id == ID_MAP.get('lat'):
-                lat = getDoubleL(canMsg)
-            elif canMsg.arbitration_id == ID_MAP.get('lon'):
-                lon = getDoubleL(canMsg)
-            elif canMsg.arbitration_id == ID_MAP.get('gs'):
-                gs = getFloat(canMsg)
-            elif canMsg.arbitration_id == ID_MAP.get('tt'):
-                tt = getFloat(canMsg)
-            elif canMsg.arbitration_id == ID_MAP.get('pilot_mass'):
-                pilot_mass = getUshort(canMsg)
-            elif canMsg.arbitration_id == ID_MAP.get('enl'):
-                enl = getUshort(canMsg)
-    except Exception as e:
-        print(f"CAN receive error: {e}")
-
-
-# Start CAN receiver in a separate thread
-threading.Thread(target=can_receive_loop, daemon=True).start()
+flight_state = FlightData()
+receiver = CANReceiver(args.channel, flight_state)
+receiver.start()
 
 app = Dash(__name__)
 
@@ -141,11 +188,16 @@ app.layout = html.Div([
     Input("timer", "n_intervals")
 )
 def update_dashboard(n):
+    data = flight_state.get_snapshot()
+    ias = data['ias']
+    tas = data['tas']
+    flap = data['flap']
+    pilot_mass = data['pilot_mass']
+
     ias_kmh = ias * 3.6 if ias is not None else 0
     tas_kmh = tas * 3.6 if tas is not None else 0
     tas_display = f"TAS (km/h) {round(tas_kmh, 1)}"
 
-    
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
         value=round(ias_kmh, 0),

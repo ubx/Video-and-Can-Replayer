@@ -36,6 +36,9 @@ CAN_IDS = {
     1506: 'enl'
 }
 
+# Invert CAN_IDS to map names to IDs for cleaner comparisons
+ID_MAP = {v: k for k, v in CAN_IDS.items()}
+
 bus = can.interface.Bus(channel=channel, interface='socketcan')
 bus.set_filters([{"can_id": can_id, "can_mask": CAN_SFF_MASK} for can_id in CAN_IDS.keys()])
 
@@ -64,31 +67,31 @@ def can_receive_loop():
                 print(f"Unknown ID {canMsg.arbitration_id}: {canMsg.data.hex()}")
                 continue
 
-            if canMsg.arbitration_id == 1200:  # UTC
+            if canMsg.arbitration_id == ID_MAP.get('utc'):  # UTC
                 pass  # getChar4(canMsg)
-            elif canMsg.arbitration_id == 315:
+            elif canMsg.arbitration_id == ID_MAP.get('ias'):
                 ias = getFloat(canMsg)
-            elif canMsg.arbitration_id == 316:
+            elif canMsg.arbitration_id == ID_MAP.get('tas'):
                 tas = getFloat(canMsg)
-            elif canMsg.arbitration_id == 317:
+            elif canMsg.arbitration_id == ID_MAP.get('cas'):
                 cas = getFloat(canMsg)
-            elif canMsg.arbitration_id == 322:
+            elif canMsg.arbitration_id == ID_MAP.get('alt'):
                 alt = getFloat(canMsg)
-            elif canMsg.arbitration_id == 340:
+            elif canMsg.arbitration_id == ID_MAP.get('flap'):
                 flap = getChar(canMsg)
-            elif canMsg.arbitration_id == 354:
+            elif canMsg.arbitration_id == ID_MAP.get('vario'):
                 vario = getFloat(canMsg)
-            elif canMsg.arbitration_id == 1036:
+            elif canMsg.arbitration_id == ID_MAP.get('lat'):
                 lat = getDoubleL(canMsg)
-            elif canMsg.arbitration_id == 1037:
+            elif canMsg.arbitration_id == ID_MAP.get('lon'):
                 lon = getDoubleL(canMsg)
-            elif canMsg.arbitration_id == 1039:
+            elif canMsg.arbitration_id == ID_MAP.get('gs'):
                 gs = getFloat(canMsg)
-            elif canMsg.arbitration_id == 1040:
+            elif canMsg.arbitration_id == ID_MAP.get('tt'):
                 tt = getFloat(canMsg)
-            elif canMsg.arbitration_id == 1316:
+            elif canMsg.arbitration_id == ID_MAP.get('pilot_mass'):
                 pilot_mass = getUshort(canMsg)
-            elif canMsg.arbitration_id == 1506:
+            elif canMsg.arbitration_id == ID_MAP.get('enl'):
                 enl = getUshort(canMsg)
     except Exception as e:
         print(f"CAN receive error: {e}")

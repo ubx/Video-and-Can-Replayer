@@ -116,6 +116,14 @@ app.layout = html.Div([
             'marginLeft': '20px',
             'fontWeight': 'bold',
             'color': 'green'
+        }),
+        html.Div(id="tas-display", style={
+            'display': 'inline-block',
+            'verticalAlign': 'middle',
+            'fontSize': '48px',
+            'marginLeft': '20px',
+            'fontWeight': 'bold',
+            'color': 'blue'
         })
     ], style={'display': 'flex', 'alignItems': 'center', 'justifyContent': 'center'}),
     dcc.Interval(id="timer", interval=500)
@@ -125,11 +133,15 @@ app.layout = html.Div([
 @app.callback(
     [Output("gauge", "figure"),
      Output("flap-display", "children"),
-     Output("optimal-flap-display", "children")],
+     Output("optimal-flap-display", "children"),
+     Output("tas-display", "children")],
     Input("timer", "n_intervals")
 )
 def update_dashboard(n):
     ias_kmh = ias * 3.6 if ias is not None else 0
+    tas_kmh = tas * 3.6 if tas is not None else 0
+    tas_display = f"TAS (km/h) {round(tas_kmh, 1)}"
+
     
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
@@ -151,7 +163,7 @@ def update_dashboard(n):
         if opt_flap:
             optimal_flap_text = f"Opt: {opt_flap}"
 
-    return fig, flap_text, optimal_flap_text
+    return fig, flap_text, optimal_flap_text, tas_display
 
 
 if __name__ == '__main__':

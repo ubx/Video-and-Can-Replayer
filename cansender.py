@@ -2,6 +2,7 @@ import threading
 from threading import Thread
 from time import sleep
 import logging
+import struct
 
 from can import Bus, MessageSync
 
@@ -48,6 +49,13 @@ class CanSender(Thread):
                     if message.arbitration_id in self.filter_out:
                         logging.info('Filter out CAN id %d', message.arbitration_id)
                     else:
+                        ## TODO -- TEMPORARY: set fix value!!!
+                        if message.arbitration_id == 1515:
+                            logging.info('Set fix value for CAN id %d', message.arbitration_id)
+                            # ID 1515: dry_and_ballast_mass (Hg -> kg * 10)
+                            mass_data = bytearray(8)
+                            struct.pack_into(">H", mass_data, 4, int(461.0 * 10))
+                            message.data = mass_data
                         if self.bus:
                             self.bus.send(message, timeout=0.1)
                         if self.bus_internal:

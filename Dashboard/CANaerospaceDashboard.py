@@ -206,7 +206,7 @@ def update_dashboard(n):
     ))
 
     if flap is not None:
-        symbol = get_flap_symbol(flap)
+        symbol, ind = get_flap_symbol(flap)
         flap_text = f"Flap: {symbol if symbol is not None else '??'} ({flap})"
     else:
         flap_text = "Flap: N/A"

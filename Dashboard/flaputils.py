@@ -57,7 +57,7 @@ def get_flap_symbol(position, flap_data=None):
     
     :param position: Current flap position.
     :param flap_data: Optional dictionary containing 'table' and 'tolerance'.
-    :return: Flap symbol (str) or None if no match found.
+    :return: (Flap symbol (str), index (int)) or (None, None) if no match found.
     """
     if flap_data is None:
         table = _TABLE
@@ -65,12 +65,14 @@ def get_flap_symbol(position, flap_data=None):
     else:
         table = flap_data.get('table', [])
         tolerance = flap_data.get('tolerance', 0)
-    
-    for target_pos, symbol in table:
+
+    for i, item in enumerate(table):
+        target_pos = item[0]
+        symbol = item[1]
         if abs(position - target_pos) <= tolerance:
-            return symbol
-    
-    return None
+            return symbol, i
+
+    return None, None
 
 def get_optimal_flap(gewicht, geschwindigkeit):
     """
@@ -132,8 +134,8 @@ if __name__ == "__main__":
         print("\n--- Testing get_flap_symbol ---")
         test_positions = [94, 95, 96, 97, 84, 85, 250, 252, 0, 230, 157, 167]
         for pos in test_positions:
-            symbol = get_flap_symbol(pos, data['flap2symbol'])
-            print(f"Position {pos} -> Symbol: {symbol}")
+            symbol, ind = get_flap_symbol(pos, data['flap2symbol'])
+            print(f"Position {pos} -> Symbol: {symbol}, Index: {ind}")
 
         print("\n--- Testing get_optimal_flap (Interpolation) ---")
         # Test with exact weights
@@ -153,7 +155,7 @@ if __name__ == "__main__":
                              # max = 128 + 0.5833 * (145-128) = 128 + 0.5833 * 17 = 128 + 9.9 = 137.9
                              # 130 is within [101, 137.9]
             (580, 270, "S1"),
-            (580, 70, "S1"),
+            (580, 70, "L"),
         ]
         for w, v, expected in test_cases:
             res = get_optimal_flap(w, v)

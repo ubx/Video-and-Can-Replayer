@@ -18,7 +18,7 @@ msgpack==1.0.8
 packaging==24.1
 pipreqs==0.5.0
 pycparser @ file:///tmp/build/80754af9/pycparser_1636541352034/work
-Pygments==2.18.0
+Pygments==2.20.0
 pyOpenSSL @ file:///opt/conda/conda-bld/pyopenssl_1643788558760/work
 pyparsing==3.1.2
 PySocks @ file:///home/builder/ci_310/pysocks_1640793678128/work

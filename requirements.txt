@@ -1,6 +1,6 @@
 aenum==3.1.15
 brotlipy==0.7.0
-certifi==2024.7.4
+certifi==2026.4.22
 cffi @ file:///home/builder/ci_310/cffi_1642753365720/work
 charset-normalizer==2.0.12
 cryptography @ file:///home/builder/ci_310/cryptography_1640808721005/work
@@ -24,7 +24,7 @@ pyparsing==3.1.2
 PySocks @ file:///home/builder/ci_310/pysocks_1640793678128/work
 python-can==4.3.0
 requests==2.33.0
-typing_extensions==4.15.0
+typing_extensions==4.12.2
 urllib3==2.7.0
 wrapt==1.13.3
 yarg==0.1.9

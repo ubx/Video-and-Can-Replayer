@@ -2,7 +2,10 @@ import argparse
 import datetime
 import os
 import re
+import struct
 from statistics import mean, variance, stdev
+
+from contextlib import contextmanager
 
 '''
    Adjust timestamps of a CAN dump file according to GPS time (UTC).
@@ -22,9 +25,10 @@ def getCanData(line):
     parts2 = parts[2].split("#")
 
     canIdStr = parts2[0]
+    dataFullStr = parts2[1]
     nodeIdStr = parts2[1][0:2]
     dataStr = parts2[1][8:40]
-    return ts, canDevStr, canIdStr, dataStr, nodeIdStr
+    return ts, canDevStr, canIdStr, dataStr, nodeIdStr, dataFullStr
 
 
 def statistics(ids, id_):
@@ -36,8 +40,40 @@ def check(line: str) -> bool:
     return bool(re.match(pattern, line))
 
 
+@contextmanager
+def read_bin_file(filename):
+    # Binary Log Packet structure (fixed 21 bytes)
+    # typedef struct __attribute__((packed))
+    # {
+    #     double timestamp;   // 8 bytes
+    #     uint32_t id;        // 4 bytes
+    #     uint8_t len;        // 1 byte
+    #     uint8_t data[8];    // 8 bytes
+    # } LogPacket;
+    struct_format = '<dIB8B'
+    f = open(filename, 'rb')
+    try:
+        def generator():
+            while True:
+                chunk = f.read(21)
+                if not chunk or len(chunk) < 21:
+                    break
+                timestamp, can_id, length, *data = struct.unpack(struct_format, chunk)
+                data_hex = "".join("{:02X}".format(b) for b in data[:length])
+                # Format: (timestamp) can0 ID#DATA
+                yield "({:f}) can0 {:X}#{:s}\n".format(timestamp, can_id, data_hex)
+
+        yield generator()
+    finally:
+        f.close()
+
+
 def close_logfile(ts_log):
     global new_log, new_log_file_name
+    if ts_log is None:
+        if new_log:
+            new_log.close()
+        return
     try:
         new_log.close()
         new_log_file_name = "data/candump-{}.log". \
@@ -70,9 +106,9 @@ def sync_with_gps(log_file_name: str, diff):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(
-        description='Correct time stamps according to the logger time sync (canId 0x1FFFFFF0) and optional GPS time (UTC).'
-                    'Only useful for CANaerospace format!')
-    parser.add_argument('-input', metavar='input', type=str, required=True, help='Input logfile.')
+        description='Correct time stamps according to the logger time sync (canId 0x1FFFFFF0) and optional GPS time (UTC). '
+                    'Supports text logs and .BIN binary logs. Only useful for CANaerospace format!')
+    parser.add_argument('-input', metavar='input', type=str, required=True, help='Input logfile (text or .BIN binary).')
     parser.add_argument('-gps', action='store_true', help='Sync with GPS time (canIDs 1200 and 1206.')
 
     args = parser.parse_args(argv)
@@ -86,7 +122,12 @@ def main(argv=None):
     mmm = []
     new_cnt = 0
 
-    with open(inputFile) as inf:
+    if inputFile.upper().endswith(".BIN"):
+        context_manager = read_bin_file(inputFile)
+    else:
+        context_manager = open(inputFile)
+
+    with context_manager as inf:
         canIds = {}
         nodeIds = {}
         dataUtcStr = None
@@ -108,7 +149,7 @@ def main(argv=None):
                 if not check(line):
                     print("ERROR, line={:d} >>>{:s}<<<".format(cnt, line.replace("\n", "")))
                 else:
-                    ts, canDevStr, canIdStr, dataStr, nodeIdStr = getCanData(line)
+                    ts, canDevStr, canIdStr, dataStr, nodeIdStr, dataFullStr = getCanData(line)
                     diff = 0.0
                     canId = int(canIdStr, 16)
                     if ts_first is None:
@@ -121,9 +162,10 @@ def main(argv=None):
                         ts_prev = ts
 
                     if canId == 0x1FFFFFF0:  # Time sync
-                        ts_log = datetime.datetime((int(line[34:36], 16) + 2000), int(line[37:38], 16),
-                                                   int(line[38:40], 16), int(line[40:42], 16),
-                                                   int(line[42:44], 16), int(line[44:46], 16)).timestamp()
+                        # CANaerospace Time sync format: YY MM DD HH MM SS (Bytes 0-5)
+                        ts_log = datetime.datetime((int(dataFullStr[0:2], 16) + 2000), int(dataFullStr[2:4], 16),
+                                                   int(dataFullStr[4:6], 16), int(dataFullStr[6:8], 16),
+                                                   int(dataFullStr[8:10], 16), int(dataFullStr[10:12], 16)).timestamp()
                         diff = ts_log - ts
                         if ts_log_last is None:
                             ts_log_last = ts_log

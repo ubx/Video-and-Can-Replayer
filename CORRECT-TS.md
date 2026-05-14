@@ -6,8 +6,10 @@ clock time.
 
 ## What it does
 
-- Reads an input CAN dump file passed with `-input`.
-- Validates line format (expects `(<timestamp>) <canX|vcanX> <can_id>#<data>`).
+- Reads an input CAN dump file passed with `-input`. Supports `.BIN` binary logs.
+- Validates line format (expects `(<timestamp>) <canX|vcanX> <can_id>#<data>`) for text logs.
+- For `.BIN` files, expects a fixed 21-byte packet structure: `double timestamp` (8), `uint32 id` (4), `uint8 len` (1),
+  `uint8 data[8]` (8).
 - Tracks and counts CAN IDs and node IDs for summary statistics.
 - Uses logger time-sync frames (`0x1FFFFFF0`) to compute a timestamp offset (`diff`) and apply it to normal messages.
 - Detects larger logger-time jumps and splits output into separate corrected log files.

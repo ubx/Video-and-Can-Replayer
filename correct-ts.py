@@ -6,6 +6,7 @@ import struct
 from statistics import mean, variance, stdev
 
 from contextlib import contextmanager
+from canaerospace_ids import canaerospace_ids
 
 '''
    Adjust timestamps of a CAN dump file according to GPS time (UTC).
@@ -110,10 +111,12 @@ def main(argv=None):
                     'Supports text logs and .BIN binary logs. Only useful for CANaerospace format!')
     parser.add_argument('-input', metavar='input', type=str, required=True, help='Input logfile (text or .BIN binary).')
     parser.add_argument('-gps', action='store_true', help='Sync with GPS time (canIDs 1200 and 1206.')
+    parser.add_argument('-canid', action='store_true', help='Translate CAN identifiers according to CANaerospace spec.')
 
     args = parser.parse_args(argv)
     inputFile = args.input
     syncwithgps = args.gps
+    translate_canid = args.canid
 
     # Globals used by helper functions close_logfile() and print_gps_diff_statistics()
     global new_log, new_log_file_name, mmm, new_cnt
@@ -216,8 +219,15 @@ def main(argv=None):
             sync_with_gps(new_log_file_name, mean(mmm))
 
     print("canId statistics")
-    print(sorted(canIds.items(), key=lambda kv: kv[0], reverse=True))
-    print(sorted(canIds.items(), key=lambda kv: kv[1], reverse=True))
+    if translate_canid:
+        for k, v in sorted(canIds.items(), key=lambda kv: kv[0], reverse=True):
+            print(f"{k} , {canaerospace_ids.get(k, 'Unknown')} : {v}")
+        print("\nSorted by frequency:")
+        for k, v in sorted(canIds.items(), key=lambda kv: kv[1], reverse=True):
+            print(f"{k} , {canaerospace_ids.get(k, 'Unknown')} : {v}")
+    else:
+        print(sorted(canIds.items(), key=lambda kv: kv[0], reverse=True))
+        print(sorted(canIds.items(), key=lambda kv: kv[1], reverse=True))
     print("nodeId statistics")
     print(sorted(nodeIds.items(), key=lambda kv: kv[0], reverse=True))
     print(sorted(nodeIds.items(), key=lambda kv: kv[1], reverse=True))

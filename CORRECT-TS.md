@@ -11,6 +11,8 @@ clock time.
 - For `.BIN` files, expects a fixed 21-byte packet structure: `double timestamp` (8), `uint32 id` (4), `uint8 len` (1),
   `uint8 data[8]` (8).
 - Tracks and counts CAN IDs and node IDs for summary statistics.
+- Optionally (`-canid`) translates CAN identifiers using CANaerospace V 1.7 specification for more descriptive
+  statistics.
 - Uses logger time-sync frames (`0x1FFFFFF0`) to compute a timestamp offset (`diff`) and apply it to normal messages.
 - Detects larger logger-time jumps and splits output into separate corrected log files.
 - Optionally (`-gps`) computes GPS-based offset checks from UTC (`1200`) + Date (`1206`) frames and creates additional
@@ -39,6 +41,14 @@ clock time.
 - When both are available, the script computes the difference between corrected logger time and GPS time, stores
   samples, and prints statistics (mean, variance, stdev, max, min).
 - If GPS samples exist for a segment, the mean difference is applied to create the `-gps.log` variant.
+
+## CAN identifier translation (`-canid`)
+
+- When enabled, the summary statistics at the end of execution include the names of the CANaerospace identifiers.
+- The names are sourced from `canaerospace_ids.py`, which contains standard and project-specific (from `can_as.h`)
+  identifier mappings.
+- Each identifier is printed on its own line in the format: `ID , Name : Count`.
+- Statistics are printed twice: once sorted by ID (descending) and once sorted by frequency (descending).
 
 ## Notes and limitations
 

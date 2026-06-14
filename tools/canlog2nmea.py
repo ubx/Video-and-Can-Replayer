@@ -12,6 +12,20 @@ def nmeachecksum(sentence):
     return '{:02X}'.format(c)
 
 
+def format_pflaa(alarm_level, rel_north, rel_east, rel_vert, id_type, id_hex, track, turn_rate, gs, climb_rate,
+                 ac_type, no_track=None, source=None, rssi=None):
+    pflaa = "PFLAA,{},{},{},{},{},{},{},{},{},{},{}".format(
+        alarm_level, rel_north, rel_east, rel_vert, id_type, id_hex, track, turn_rate, gs, climb_rate, ac_type
+    )
+    if no_track is not None:
+        pflaa += ",{}".format(1 if no_track else 0)
+        if source is not None:
+            pflaa += ",{}".format(source)
+            if rssi is not None:
+                pflaa += ",{}".format(rssi)
+    return "${}*{}".format(pflaa, nmeachecksum(pflaa))
+
+
 def format_lat(lat):
     if lat is None: return ","
     direction = "N" if lat >= 0 else "S"
@@ -80,8 +94,30 @@ def output_nmea(state):
     print("${}*{}".format(pdswc, nmeachecksum(pdswc)))
 
     # $PFLAU,rx,tx,gps,power,alarm,rel_bearing,alarm_level,rel_vert,rel_dist,id*hh
-    pflau = "PFLAU,0,1,1,1,0,0,0,0,0"
+    pflau_data = state['pflau']
+    pflau = "PFLAU,{},{},{},{},{},{},{},{},{}".format(
+        pflau_data['rx'], pflau_data['tx'], pflau_data['gps'],
+        pflau_data['power'], pflau_data['alarm'], pflau_data['rel_bearing'],
+        pflau_data['alarm_level'], pflau_data['rel_vert'], pflau_data['rel_dist']
+    )
     print("${}*{}".format(pflau, nmeachecksum(pflau)))
+
+    # Output $PFLAA for each known object
+    for obj_id, obj in state['flarm_objects'].items():
+        # Only output if we have at least position data
+        if obj.get('rel_north') is not None:
+            print(format_pflaa(
+                obj['alarm_level'], obj['rel_north'], obj['rel_east'], obj['rel_vert'],
+                obj['id_type'], obj['id_hex'],
+                obj['track'] if obj['valid_track'] else "",
+                "{:.1f}".format(obj['turn_rate']) if obj['valid_turn_rate'] else "",
+                "{:.1f}".format(obj['gs']) if obj['valid_gs'] else "",
+                "{:.1f}".format(obj['climb_rate']) if obj['valid_climb_rate'] else "",
+                obj['ac_type'],
+                no_track=obj.get('no_track'),
+                source=obj.get('source'),
+                rssi=obj.get('rssi')
+            ))
 
     # $PDVVT,track_true,T,track_mag,M,gs_kmh,K,gs_ms,S*hh
     gs_kmh = state['gs'] * 3.6
@@ -130,7 +166,12 @@ def main():
         'ias': 0.0,
         'tas': 0.0,
         'oat': 273.15,
-        'switches': [0] * 8
+        'switches': [0] * 8,
+        'pflau': {
+            'rx': 0, 'tx': 1, 'gps': 1, 'power': 1, 'alarm': 0,
+            'rel_bearing': 0, 'alarm_level': 0, 'rel_vert': 0, 'rel_dist': 0
+        },
+        'flarm_objects': {}
     }
 
     try:
@@ -188,6 +229,70 @@ def main():
                     state['tas'] = getFloat(data_bytes) * 3.6  # m/s to km/h
                 elif can_id == 335:  # OAT
                     state['oat'] = getFloat(data_bytes)
+                elif can_id == 1300:  # FLARM_STATE (PFLAU)
+                    # Logic from CANaerospace.cpp and flarmPropagated.cpp
+                    service_code = data_bytes[1]
+                    if service_code == 0:
+                        # Case 0 in flarmPropagated.cpp
+                        state['pflau']['rx'] = data_bytes[5]
+                        state['pflau']['tx'] = data_bytes[4] & 0x01
+                        state['pflau']['gps'] = (data_bytes[4] >> 1) & 0x03
+                        # objectData->AlarmLevel is set if bit 4 of data[0] is NOT set
+                        if not (data_bytes[4] >> 4 & 0x01):
+                            state['pflau']['alarm_level'] = 3
+                    elif service_code == 1:
+                        state['pflau']['alarm_level'] = data_bytes[4] & 0x07
+                    elif service_code == 2:
+                        # USHORT2
+                        u1, u2 = struct.unpack('>HH', payload)
+                        state['pflau']['rel_vert'] = u1
+                        state['pflau']['rel_dist'] = u2
+                    elif service_code == 3:
+                        # SHORT
+                        s1 = struct.unpack('>h', payload[:2])[0]
+                        state['pflau']['rel_bearing'] = s1
+                elif 1301 <= can_id <= 1304:  # FLARM_OBJECT (PFLAA)
+                    # Logic from CANaerospace.cpp and flarmPropagated.cpp
+                    # ID 1301=AL3, 1302=AL2, 1303=AL1, 1304=AL0
+                    service_code = data_bytes[1]
+                    messageindex = service_code & 0x0F
+                    validFlags = (service_code >> 4) & 0x0F
+
+                    obj_can_id = can_id
+                    if obj_can_id not in state['flarm_objects']:
+                        state['flarm_objects'][obj_can_id] = {
+                            'alarm_level': 1304 - obj_can_id,
+                            'rel_north': 0, 'rel_east': 0, 'rel_vert': 0,
+                            'id_type': 0, 'id_hex': '000000', 'track': 0, 'turn_rate': 0.0,
+                            'gs': 0.0, 'climb_rate': 0.0, 'ac_type': 0,
+                            'valid_track': False, 'valid_gs': False, 'valid_turn_rate': False, 'valid_climb_rate': False
+                        }
+                    obj = state['flarm_objects'][obj_can_id]
+
+                    if messageindex == 0:
+                        # RelNorth, RelEast as SHORT
+                        u1, u2 = struct.unpack('>hh', payload)
+                        obj['rel_north'] = u1
+                        obj['rel_east'] = u2
+                        obj['alarm_level'] = 1304 - obj_can_id
+                    elif messageindex == 1:
+                        # RelVert, Track
+                        u1, u2 = struct.unpack('>hh', payload)
+                        obj['rel_vert'] = u1
+                        obj['track'] = u2
+                        obj['valid_track'] = (validFlags & 0x02) != 0  # Simplified check
+                    elif messageindex == 2:
+                        # GroundSpeed, Type, ClimbRate, TurnRate
+                        obj['gs'] = data_bytes[4]
+                        obj['ac_type'] = data_bytes[5]
+                        obj['climb_rate'] = struct.unpack('>b', data_bytes[6:7])[0] / 10.0
+                        obj['turn_rate'] = struct.unpack('>b', data_bytes[7:8])[0] / 10.0
+                        obj['valid_gs'] = (validFlags & 0x01) != 0
+                        obj['valid_climb_rate'] = (validFlags & 0x04) != 0
+                        obj['valid_turn_rate'] = (validFlags & 0x08) != 0
+                    elif messageindex == 3:
+                        obj['id_type'] = data_bytes[4]  # IdType
+                        obj['id_hex'] = '{:02X}{:02X}{:02X}'.format(data_bytes[5], data_bytes[6], data_bytes[7])
     except FileNotFoundError:
         print(f"Error: File {args.input} not found.", file=sys.stderr)
         sys.exit(1)

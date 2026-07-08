@@ -1,11 +1,11 @@
 import argparse
 import datetime
 import os
-import re
 import struct
+import can
+from contextlib import contextmanager
 from statistics import mean, variance, stdev
 
-from contextlib import contextmanager
 from canaerospace_ids import canaerospace_ids
 
 '''
@@ -15,30 +15,10 @@ from canaerospace_ids import canaerospace_ids
 '''
 
 
-## todo -- user rather Log Reader then our  complicated parsing code !!!
-
-
-# (1564994147.496590) can0 78A#0A0C1CE5F7990000
-def getCanData(line):
-    parts = (" ".join(line.split()).split())
-    ts = float(parts[0][1:-1])
-    canDevStr = parts[1]
-    parts2 = parts[2].split("#")
-
-    canIdStr = parts2[0]
-    dataFullStr = parts2[1]
-    nodeIdStr = parts2[1][0:2]
-    dataStr = parts2[1][8:40]
-    return ts, canDevStr, canIdStr, dataStr, nodeIdStr, dataFullStr
 
 
 def statistics(ids, id_):
     ids[id_] = ids.get(id_, 0) + 1
-
-
-def check(line: str) -> bool:
-    pattern = r'^\(\d+\.\d+\)\s+(?:can|vcan)\d*\s+[0-9A-Fa-f]+#[0-9A-Fa-f]+$'
-    return bool(re.match(pattern, line))
 
 
 @contextmanager
@@ -60,9 +40,7 @@ def read_bin_file(filename):
                 if not chunk or len(chunk) < 21:
                     break
                 timestamp, can_id, length, *data = struct.unpack(struct_format, chunk)
-                data_hex = "".join("{:02X}".format(b) for b in data[:length])
-                # Format: (timestamp) can0 ID#DATA
-                yield "({:f}) can0 {:X}#{:s}\n".format(timestamp, can_id, data_hex)
+                yield can.Message(timestamp=timestamp, arbitration_id=can_id, dlc=length, data=data[:length])
 
         yield generator()
     finally:
@@ -105,11 +83,24 @@ def sync_with_gps(log_file_name: str, diff):
             lf_gps.write("({:f}) {} {}\n".format(ts - diff, channel, frame))
 
 
+def get_canaerospace_data(msg):
+    ts = msg.timestamp
+    canId = msg.arbitration_id
+    data = msg.data
+    dataFullStr = "".join("{:02X}".format(b) for b in data)
+    # nodeIdStr = dataFullStr[0:2]
+    # dataStr = dataFullStr[8:]
+    nodeIdStr = dataFullStr[0:2] if len(dataFullStr) >= 2 else ""
+    dataStr = dataFullStr[8:] if len(dataFullStr) >= 8 else ""
+    return ts, canId, dataFullStr, nodeIdStr, dataStr
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         description='Correct time stamps according to the logger time sync (canId 0x1FFFFFF0) and optional GPS time (UTC). '
                     'Supports text logs and .BIN binary logs. Only useful for CANaerospace format!')
-    parser.add_argument('-input', metavar='input', type=str, required=True, help='Input logfile (text or .BIN binary).')
+    parser.add_argument('-input', metavar='input', type=str, required=True,
+                        help='Input logfile. For supported types see can.LogReader.')
     parser.add_argument('-gps', action='store_true', help='Sync with GPS time (canIDs 1200 and 1206.')
     parser.add_argument('-canid', action='store_true', help='Translate CAN identifiers according to CANaerospace spec.')
 
@@ -126,11 +117,11 @@ def main(argv=None):
     new_cnt = 0
 
     if inputFile.upper().endswith(".BIN"):
-        context_manager = read_bin_file(inputFile)
+        reader = read_bin_file(inputFile)
     else:
-        context_manager = open(inputFile)
+        reader = can.LogReader(inputFile)
 
-    with context_manager as inf:
+    with reader as messages:
         canIds = {}
         nodeIds = {}
         dataUtcStr = None
@@ -144,71 +135,76 @@ def main(argv=None):
         ts_prev = None
         ts_gps_first = None
 
-        for cnt, line in enumerate(inf):
+        for cnt, msg in enumerate(messages):
             if new_log is None:
                 log_file_nr = log_file_nr + 1
                 new_log = open("data/newlog_{}.log".format(log_file_nr), "w+")
-            if not line.startswith("*"):
-                if not check(line):
-                    print("ERROR, line={:d} >>>{:s}<<<".format(cnt, line.replace("\n", "")))
-                else:
-                    ts, canDevStr, canIdStr, dataStr, nodeIdStr, dataFullStr = getCanData(line)
-                    diff = 0.0
-                    canId = int(canIdStr, 16)
-                    if ts_first is None:
-                        ts_first = ts
-                    if ts_prev is None:
-                        ts_prev = ts
-                    else:
-                        if ts - ts_prev > 1.1:
-                            print("ERROR, gap between ts {:f} and {:f}, {:.3f}s \n".format(ts_prev, ts, ts - ts_prev))
-                        ts_prev = ts
 
-                    if canId == 0x1FFFFFF0:  # Time sync
-                        # CANaerospace Time sync format: YY MM DD HH MM SS (Bytes 0-5)
-                        ts_log = datetime.datetime((int(dataFullStr[0:2], 16) + 2000), int(dataFullStr[2:4], 16),
-                                                   int(dataFullStr[4:6], 16), int(dataFullStr[6:8], 16),
-                                                   int(dataFullStr[8:10], 16), int(dataFullStr[10:12], 16)).timestamp()
-                        diff = ts_log - ts
-                        if ts_log_last is None:
-                            ts_log_last = ts_log
-                        ts_log_diff = ts_log - ts_log_last
+            ts, canId, dataFullStr, nodeIdStr, dataStr = get_canaerospace_data(msg)
+
+            diff = 0.0
+            if ts_first is None:
+                ts_first = ts
+            if ts_prev is None:
+                ts_prev = ts
+            else:
+                if ts - ts_prev > 1.1:
+                    print("ERROR, gap between ts {:f} and {:f}, {:.3f}s \n".format(ts_prev, ts, ts - ts_prev))
+                ts_prev = ts
+
+            if canId == 0x1FFFFFF0:  # Time sync
+                # CANaerospace Time sync format: YY MM DD HH MM SS (Bytes 0-5)
+                # dataFullStr corresponds to the whole data payload in hex.
+                try:
+                    ts_log = datetime.datetime((int(dataFullStr[0:2], 16) + 2000), int(dataFullStr[2:4], 16),
+                                               int(dataFullStr[4:6], 16), int(dataFullStr[6:8], 16),
+                                               int(dataFullStr[8:10], 16), int(dataFullStr[10:12], 16)).timestamp()
+                    diff = ts_log - ts
+                    if ts_log_last is None:
                         ts_log_last = ts_log
-                        if ts_log_first is None:
-                            ts_log_first = ts_log
-                        line = None
+                    ts_log_diff = ts_log - ts_log_last
+                    ts_log_last = ts_log
+                    if ts_log_first is None:
+                        ts_log_first = ts_log
+                except (ValueError, IndexError):
+                    pass
+                continue  # Don't write time sync to new log
 
-                    elif canId == 1200:  # UTC
-                        if not dataDateStr is None:
-                            ts_gps = datetime.datetime((int(dataDateStr[4:6], 16) * 100) + int(dataDateStr[6:8], 16),
-                                                       int(dataDateStr[2:4], 16),
-                                                       int(dataDateStr[0:2], 16), int(dataStr[0:2], 16),
-                                                       int(dataStr[2:4], 16),
-                                                       int(dataStr[4:6], 16)).timestamp()
-                            if ts_gps_first is None:
-                                ts_gps_first = ts_gps
-                            mmm.append((ts + diff) - ts_gps)
-                        dataUtcStr = dataStr
+            elif canId == 1200:  # UTC
+                if not dataDateStr is None:
+                    try:
+                        ts_gps = datetime.datetime((int(dataDateStr[4:6], 16) * 100) + int(dataDateStr[6:8], 16),
+                                                   int(dataDateStr[2:4], 16),
+                                                   int(dataDateStr[0:2], 16), int(dataStr[0:2], 16),
+                                                   int(dataStr[2:4], 16),
+                                                   int(dataStr[4:6], 16)).timestamp()
+                        if ts_gps_first is None:
+                            ts_gps_first = ts_gps
+                        mmm.append((ts + (diff if diff is not None else 0.0)) - ts_gps)
+                    except (ValueError, IndexError):
+                        pass
+                dataUtcStr = dataStr
 
-                    elif canId == 1206:  # Date
-                        dataDateStr = dataStr
+            elif canId == 1206:  # Date
+                dataDateStr = dataStr
 
-                    if line is not None:
-                        parts = (" ".join(line.split()).split())
-                        new_log.write("({:f}) {} {}\n".format(ts + diff, parts[1], parts[2]))
-                        new_cnt = new_cnt + 1
+            # Write to new log
+            data_hex = "".join("{:02X}".format(b) for b in msg.data)
+            new_log.write("({:f}) can0 {:X}#{:s}\n".format(ts + (diff if diff is not None else 0.0), canId, data_hex))
+            new_cnt = new_cnt + 1
 
-                    if ts_log_first is not None and (ts_log_diff is not None) and ts_log_diff > 1.0:
-                        close_logfile(ts_log_first)
-                        print_gps_diff_statistics()
-                        if syncwithgps and mmm:
-                            sync_with_gps(new_log_file_name, mean(mmm))
-                        mmm = []
-                        new_log = None
-                        ts_log_first = None
+            if ts_log_first is not None and (ts_log_diff is not None) and ts_log_diff > 1.0:
+                close_logfile(ts_log_first)
+                print_gps_diff_statistics()
+                if syncwithgps and mmm:
+                    sync_with_gps(new_log_file_name, mean(mmm))
+                mmm = []
+                new_log = None
+                ts_log_first = None
 
-                    statistics(canIds, canId)
-                    statistics(nodeIds, int(nodeIdStr, 16))
+            statistics(canIds, canId)
+            if nodeIdStr:
+                statistics(nodeIds, int(nodeIdStr, 16))
 
         if ts_log_first is None:
             ts_log_first = ts_gps_first

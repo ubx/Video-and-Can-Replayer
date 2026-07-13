@@ -1,6 +1,5 @@
 import sys
 import struct
-import datetime
 import argparse
 
 
